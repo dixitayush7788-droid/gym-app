@@ -10,11 +10,10 @@
 
   <script>
     const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
-    const SUPABASE_KEY = "Sb_publishable_bFbeqpwaWmp0aioDVSkLAg_J7X4lzWk";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
     const CORRECT_PIN = "1234";
     var db = null;
 
-    // 1. DIRECT UNLOCK BUTTON FUNCTION
     function unlockApp() {
       var pin = document.getElementById("pinInput").value.trim();
       var err = document.getElementById("pinError");
@@ -29,7 +28,6 @@
       }
     }
 
-    // 2. INITIALIZE SUPABASE
     function initDatabase() {
       try {
         if (window.supabase) {
@@ -37,11 +35,10 @@
           refreshStats();
         }
       } catch (e) {
-        console.log("DB Init Error: ", e);
+        console.log("DB Error: ", e);
       }
     }
 
-    // 3. LOAD STATS
     async function refreshStats() {
       if (!db) return;
       try {
@@ -62,7 +59,6 @@
       } catch (err) {}
     }
 
-    // 4. DIRECT MEMBER REGISTRATION FUNCTION
     async function registerMember() {
       var name = document.getElementById("formName").value.trim();
       var phone = document.getElementById("formPhone").value.trim();
@@ -80,9 +76,7 @@
       btn.disabled = true;
       status.style.display = "none";
 
-      if (!db) {
-        initDatabase();
-      }
+      if (!db) initDatabase();
 
       var exp = new Date();
       exp.setMonth(exp.getMonth() + months);
@@ -120,7 +114,6 @@
       }
     }
 
-    // 5. SCANNER FUNCTION
     function startScannerNow() {
       document.getElementById("reader").style.display = "block";
       document.getElementById("startScanBtn").style.display = "none";
@@ -163,7 +156,6 @@
 
   <!-- 2. ADMIN DASHBOARD CONTENT -->
   <div id="adminContent" style="display:none;" class="max-w-md mx-auto">
-    <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-xl font-black text-white">⚡ GYM ADMIN</h1>
@@ -172,7 +164,7 @@
       <button type="button" onclick="location.reload()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3.5 py-2 rounded-xl border border-gray-700 text-gray-300 font-medium">🔒 Lock</button>
     </div>
 
-    <!-- Stats Overview Cards -->
+    <!-- Stats -->
     <div class="grid grid-cols-3 gap-2.5 mb-6">
       <div class="bg-gray-900 border border-gray-800 p-3.5 rounded-2xl text-center">
         <p class="text-[10px] text-gray-400 uppercase font-semibold">Total</p>
@@ -220,7 +212,7 @@
       <p id="formStatus" style="display:none;"></p>
     </div>
 
-    <!-- Attendance QR Scanner Section -->
+    <!-- Attendance Scanner Section -->
     <div class="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-lg">
       <h2 class="text-sm font-bold text-gray-200 mb-3">📷 Member Attendance Scanner</h2>
       <button id="startScanBtn" type="button" onclick="startScannerNow()" class="w-full bg-gray-800 border border-gray-700 text-xs font-semibold py-3 rounded-xl mb-3 hover:bg-gray-700 text-gray-200">Start Camera Scanner</button>
