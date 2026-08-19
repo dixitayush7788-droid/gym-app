@@ -6,11 +6,9 @@
   <title>Gym Admin Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
 
   <script>
     const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
-    // Fixed lowercase 'e' key
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
     const CORRECT_PIN = "1234";
     var db = null;
@@ -114,28 +112,6 @@
         alert("Connection Error: " + e.message);
       }
     }
-
-    function startScannerNow() {
-      document.getElementById("reader").style.display = "block";
-      document.getElementById("startScanBtn").style.display = "none";
-
-      var qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 200 });
-      qrScanner.render(async function(decodedText) {
-        var scanStatus = document.getElementById("scanResult");
-        scanStatus.innerText = "⏳ Recording Attendance...";
-
-        if (db) {
-          const { error } = await db.from('attendance').insert([{ member_id: decodedText }]);
-          if (!error) {
-            scanStatus.innerText = "✅ Attendance Marked!";
-            scanStatus.className = "text-xs font-semibold text-center mt-3 text-emerald-400";
-          } else {
-            scanStatus.innerText = "❌ Scan Error: " + error.message;
-            scanStatus.className = "text-xs font-semibold text-center mt-3 text-rose-400";
-          }
-        }
-      });
-    }
   </script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen p-4 pb-20 font-sans">
@@ -157,15 +133,16 @@
 
   <!-- 2. ADMIN DASHBOARD CONTENT -->
   <div id="adminContent" style="display:none;" class="max-w-md mx-auto">
+    <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-xl font-black text-white">⚡ GYM ADMIN</h1>
-        <p class="text-xs text-gray-400">Management & Scanner</p>
+        <p class="text-xs text-gray-400">Management & Members</p>
       </div>
       <button type="button" onclick="location.reload()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3.5 py-2 rounded-xl border border-gray-700 text-gray-300 font-medium">🔒 Lock</button>
     </div>
 
-    <!-- Stats -->
+    <!-- Stats Overview Cards -->
     <div class="grid grid-cols-3 gap-2.5 mb-6">
       <div class="bg-gray-900 border border-gray-800 p-3.5 rounded-2xl text-center">
         <p class="text-[10px] text-gray-400 uppercase font-semibold">Total</p>
@@ -211,14 +188,6 @@
         <button id="saveBtn" type="button" onclick="registerMember()" class="w-full bg-emerald-500 active:scale-98 font-bold text-white py-3.5 rounded-xl transition-all mt-2 text-sm shadow-lg shadow-emerald-500/20">Save & Register Member</button>
       </div>
       <p id="formStatus" style="display:none;"></p>
-    </div>
-
-    <!-- Scanner -->
-    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-lg">
-      <h2 class="text-sm font-bold text-gray-200 mb-3">📷 Member Attendance Scanner</h2>
-      <button id="startScanBtn" type="button" onclick="startScannerNow()" class="w-full bg-gray-800 border border-gray-700 text-xs font-semibold py-3 rounded-xl mb-3 hover:bg-gray-700 text-gray-200">Start Camera Scanner</button>
-      <div id="reader" style="display:none;" class="overflow-hidden rounded-2xl border border-gray-800 bg-black min-h-[220px]"></div>
-      <p id="scanResult" class="text-xs font-semibold text-center mt-3 text-gray-400">Scanner ready</p>
     </div>
   </div>
 
