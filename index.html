@@ -6,7 +6,98 @@
   <title>Gym Member Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
+    var db = null;
+
+    function initClient() {
+      try {
+        if (window.supabase) {
+          db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+      } catch (e) {
+        console.log("DB Init Error: ", e);
+      }
+    }
+
+    async function searchMember() {
+      var phone = document.getElementById("phoneInput").value.trim();
+      var errorMsg = document.getElementById("errorMsg");
+      var card = document.getElementById("memberCard");
+      var btn = document.getElementById("searchBtn");
+
+      errorMsg.style.display = "none";
+      card.style.display = "none";
+
+      if (!phone) {
+        errorMsg.innerText = "Kripya 10-digit mobile number enter karein!";
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      btn.innerText = "Searching...";
+      btn.disabled = true;
+
+      if (!db) initClient();
+
+      try {
+        const { data, error } = await db
+          .from('members')
+          .select('*')
+          .eq('phone', phone)
+          .single();
+
+        btn.innerText = "Search";
+        btn.disabled = false;
+
+        if (error || !data) {
+          errorMsg.innerText = "❌ Member record nahi mila. Admin se sampark karein.";
+          errorMsg.style.display = "block";
+          return;
+        }
+
+        // Details Populate
+        document.getElementById("memberName").innerText = data.full_name;
+        document.getElementById("memberPhone").innerText = "+91 " + data.phone;
+        document.getElementById("planDuration").innerText = data.plan_duration_months + " Month(s)";
+        document.getElementById("expiryDate").innerText = data.expiry_date;
+
+        // Validity calculation
+        var today = new Date();
+        var expiry = new Date(data.expiry_date);
+        var diffTime = expiry - today;
+        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        var badge = document.getElementById("statusBadge");
+        var daysText = document.getElementById("daysLeft");
+
+        if (diffDays >= 0) {
+          badge.innerText = "Active Member";
+          badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+          daysText.innerText = diffDays + " Days";
+          daysText.className = "text-2xl font-black text-emerald-400";
+        } else {
+          badge.innerText = "Plan Expired";
+          badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-rose-500/20 text-rose-400 border border-rose-500/30";
+          daysText.innerText = "Expired";
+          daysText.className = "text-2xl font-black text-rose-400";
+        }
+
+        // Fast & Crash-Proof QR Code Generator
+        var qrImg = document.getElementById("qrImage");
+        qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(data.id);
+
+        card.style.display = "block";
+      } catch (err) {
+        btn.innerText = "Search";
+        btn.disabled = false;
+        errorMsg.innerText = "Connection error: " + err.message;
+        errorMsg.style.display = "block";
+      }
+    }
+  </script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen flex flex-col items-center p-4">
 
@@ -21,14 +112,14 @@
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl">
       <label class="block text-xs font-semibold text-gray-400 uppercase mb-2">Phone Number</label>
       <div class="flex gap-2">
-        <input id="phoneInput" type="tel" placeholder="10-digit number" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500" />
-        <button onclick="searchMember()" class="bg-emerald-500 hover:bg-emerald-600 font-semibold px-5 py-3 rounded-xl transition-all">Search</button>
+        <input id="phoneInput" type="tel" placeholder="10-digit number" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-500" />
+        <button id="searchBtn" type="button" onclick="searchMember()" class="bg-emerald-500 active:scale-95 hover:bg-emerald-600 font-semibold px-5 py-3 rounded-xl transition-all text-white shadow-lg shadow-emerald-500/20">Search</button>
       </div>
-      <p id="errorMsg" class="text-rose-400 text-xs mt-3 hidden"></p>
+      <p id="errorMsg" style="display:none;" class="text-rose-400 text-xs mt-3 font-semibold"></p>
     </div>
 
     <!-- Member Card -->
-    <div id="memberCard" class="hidden mt-6 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-3xl p-6 shadow-2xl">
+    <div id="memberCard" style="display:none;" class="mt-6 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-3xl p-6 shadow-2xl">
       <div class="flex justify-between items-start">
         <div>
           <span id="statusBadge" class="text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase"></span>
@@ -43,8 +134,8 @@
 
       <!-- Attendance QR Code -->
       <div class="my-6 flex flex-col items-center justify-center p-4 bg-white rounded-2xl">
-        <div id="qrcode"></div>
-        <p class="text-gray-600 text-[10px] font-bold mt-2 uppercase tracking-wider">Attendance QR Code</p>
+        <img id="qrImage" src="" alt="Member QR Code" class="w-40 h-40 object-contain rounded-lg" />
+        <p class="text-gray-700 text-[10px] font-bold mt-2 uppercase tracking-wider">Attendance QR Code</p>
       </div>
 
       <!-- Plan Details -->
@@ -61,70 +152,5 @@
     </div>
   </div>
 
-  <script>
-    const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    async function searchMember() {
-      const phone = document.getElementById("phoneInput").value.trim();
-      const errorMsg = document.getElementById("errorMsg");
-      const card = document.getElementById("memberCard");
-      errorMsg.classList.add("hidden");
-      card.classList.add("hidden");
-
-      if (!phone) {
-        errorMsg.innerText = "Please enter phone number";
-        errorMsg.classList.remove("hidden");
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('members')
-        .select('*')
-        .eq('phone', phone)
-        .single();
-
-      if (error || !data) {
-        errorMsg.innerText = "Member record nahi mila. Admin se contact karein.";
-        errorMsg.classList.remove("hidden");
-        return;
-      }
-
-      document.getElementById("memberName").innerText = data.full_name;
-      document.getElementById("memberPhone").innerText = "+91 " + data.phone;
-      document.getElementById("planDuration").innerText = `${data.plan_duration_months} Month(s)`;
-      document.getElementById("expiryDate").innerText = data.expiry_date;
-
-      const today = new Date();
-      const expiry = new Date(data.expiry_date);
-      const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-      
-      const badge = document.getElementById("statusBadge");
-      const daysText = document.getElementById("daysLeft");
-
-      if (diffDays >= 0) {
-        badge.innerText = "Active Member";
-        badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-        daysText.innerText = diffDays + " Days";
-        daysText.className = "text-2xl font-black text-emerald-400";
-      } else {
-        badge.innerText = "Plan Expired";
-        badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-rose-500/20 text-rose-400 border border-rose-500/30";
-        daysText.innerText = "Expired";
-        daysText.className = "text-2xl font-black text-rose-400";
-      }
-
-      const qrContainer = document.getElementById("qrcode");
-      qrContainer.innerHTML = "";
-      new QRCode(qrContainer, {
-        text: data.id,
-        width: 150,
-        height: 150
-      });
-
-      card.classList.remove("hidden");
-    }
-  </script>
 </body>
 </html>
