@@ -27,7 +27,7 @@
       <p id="errorMsg" class="text-rose-400 text-xs mt-3 hidden"></p>
     </div>
 
-    <!-- Member Card (Hidden by default) -->
+    <!-- Member Card -->
     <div id="memberCard" class="hidden mt-6 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-3xl p-6 shadow-2xl">
       <div class="flex justify-between items-start">
         <div>
@@ -41,13 +41,13 @@
         </div>
       </div>
 
-      <!-- QR Code Section -->
+      <!-- Attendance QR Code -->
       <div class="my-6 flex flex-col items-center justify-center p-4 bg-white rounded-2xl">
         <div id="qrcode"></div>
         <p class="text-gray-600 text-[10px] font-bold mt-2 uppercase tracking-wider">Attendance QR Code</p>
       </div>
 
-      <!-- Details Grid -->
+      <!-- Plan Details -->
       <div class="grid grid-cols-2 gap-3 text-xs">
         <div class="bg-gray-800/60 p-3 rounded-xl">
           <p class="text-gray-400 text-[10px] uppercase">Plan Duration</p>
@@ -63,7 +63,7 @@
 
   <script>
     const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
-    const SUPABASE_KEY = "PASTE_YOUR_ANON_KEY_HERE";
+    const SUPABASE_KEY = "Sb_publishable_bFbeqpwaWmp0aioDVSkLAg_J7X4lzWk";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function searchMember() {
@@ -91,13 +91,11 @@
         return;
       }
 
-      // Display data
       document.getElementById("memberName").innerText = data.full_name;
       document.getElementById("memberPhone").innerText = "+91 " + data.phone;
       document.getElementById("planDuration").innerText = `${data.plan_duration_months} Month(s)`;
       document.getElementById("expiryDate").innerText = data.expiry_date;
 
-      // Calculate days left
       const today = new Date();
       const expiry = new Date(data.expiry_date);
       const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
@@ -117,7 +115,6 @@
         daysText.className = "text-2xl font-black text-rose-400";
       }
 
-      // Render QR Code (Stores member UUID)
       const qrContainer = document.getElementById("qrcode");
       qrContainer.innerHTML = "";
       new QRCode(qrContainer, {
