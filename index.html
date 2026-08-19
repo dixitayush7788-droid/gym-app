@@ -58,13 +58,12 @@
           return;
         }
 
-        // Details Populate
         document.getElementById("memberName").innerText = data.full_name;
         document.getElementById("memberPhone").innerText = "+91 " + data.phone;
         document.getElementById("planDuration").innerText = data.plan_duration_months + " Month(s)";
         document.getElementById("expiryDate").innerText = data.expiry_date;
+        document.getElementById("feesPaid").innerText = "₹" + (data.fees_paid || 0);
 
-        // Validity calculation
         var today = new Date();
         var expiry = new Date(data.expiry_date);
         var diffTime = expiry - today;
@@ -74,20 +73,16 @@
         var daysText = document.getElementById("daysLeft");
 
         if (diffDays >= 0) {
-          badge.innerText = "Active Member";
+          badge.innerText = "Active Membership";
           badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
           daysText.innerText = diffDays + " Days";
-          daysText.className = "text-2xl font-black text-emerald-400";
+          daysText.className = "text-3xl font-black text-emerald-400";
         } else {
           badge.innerText = "Plan Expired";
           badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-rose-500/20 text-rose-400 border border-rose-500/30";
           daysText.innerText = "Expired";
-          daysText.className = "text-2xl font-black text-rose-400";
+          daysText.className = "text-3xl font-black text-rose-400";
         }
-
-        // Fast & Crash-Proof QR Code Generator
-        var qrImg = document.getElementById("qrImage");
-        qrImg.src = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(data.id);
 
         card.style.display = "block";
       } catch (err) {
@@ -118,35 +113,37 @@
       <p id="errorMsg" style="display:none;" class="text-rose-400 text-xs mt-3 font-semibold"></p>
     </div>
 
-    <!-- Member Card -->
-    <div id="memberCard" style="display:none;" class="mt-6 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-3xl p-6 shadow-2xl">
-      <div class="flex justify-between items-start">
+    <!-- Digital Gym Pass Card -->
+    <div id="memberCard" style="display:none;" class="mt-6 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
+
+      <div class="flex justify-between items-start mb-6">
         <div>
           <span id="statusBadge" class="text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase"></span>
-          <h2 id="memberName" class="text-xl font-black mt-2 text-white capitalize"></h2>
-          <p id="memberPhone" class="text-xs text-gray-400"></p>
-        </div>
-        <div class="text-right">
-          <p class="text-[10px] text-gray-400 uppercase">Days Left</p>
-          <p id="daysLeft" class="text-2xl font-black text-emerald-400"></p>
+          <h2 id="memberName" class="text-2xl font-black mt-3 text-white capitalize"></h2>
+          <p id="memberPhone" class="text-xs text-gray-400 font-medium"></p>
         </div>
       </div>
 
-      <!-- Attendance QR Code -->
-      <div class="my-6 flex flex-col items-center justify-center p-4 bg-white rounded-2xl">
-        <img id="qrImage" src="" alt="Member QR Code" class="w-40 h-40 object-contain rounded-lg" />
-        <p class="text-gray-700 text-[10px] font-bold mt-2 uppercase tracking-wider">Attendance QR Code</p>
+      <!-- Validity Highlight -->
+      <div class="bg-gray-800/60 border border-gray-700/50 rounded-2xl p-4 mb-4 text-center">
+        <p class="text-[11px] text-gray-400 uppercase font-semibold">Remaining Validity</p>
+        <p id="daysLeft" class="text-3xl font-black text-emerald-400 mt-1"></p>
       </div>
 
-      <!-- Plan Details -->
-      <div class="grid grid-cols-2 gap-3 text-xs">
-        <div class="bg-gray-800/60 p-3 rounded-xl">
-          <p class="text-gray-400 text-[10px] uppercase">Plan Duration</p>
-          <p id="planDuration" class="font-bold text-white mt-0.5"></p>
+      <!-- Membership Specs -->
+      <div class="grid grid-cols-3 gap-2.5 text-xs text-center">
+        <div class="bg-gray-800/40 border border-gray-800 p-3 rounded-xl">
+          <p class="text-gray-400 text-[10px] uppercase font-semibold">Plan</p>
+          <p id="planDuration" class="font-bold text-white mt-1"></p>
         </div>
-        <div class="bg-gray-800/60 p-3 rounded-xl">
-          <p class="text-gray-400 text-[10px] uppercase">Expiry Date</p>
-          <p id="expiryDate" class="font-bold text-white mt-0.5"></p>
+        <div class="bg-gray-800/40 border border-gray-800 p-3 rounded-xl">
+          <p class="text-gray-400 text-[10px] uppercase font-semibold">Expires On</p>
+          <p id="expiryDate" class="font-bold text-white mt-1"></p>
+        </div>
+        <div class="bg-gray-800/40 border border-gray-800 p-3 rounded-xl">
+          <p class="text-gray-400 text-[10px] uppercase font-semibold">Paid</p>
+          <p id="feesPaid" class="font-bold text-emerald-400 mt-1"></p>
         </div>
       </div>
     </div>
