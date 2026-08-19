@@ -10,6 +10,7 @@
 
   <script>
     const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
+    // Fixed lowercase 'e' key
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
     const CORRECT_PIN = "1234";
     var db = null;
@@ -212,7 +213,7 @@
       <p id="formStatus" style="display:none;"></p>
     </div>
 
-    <!-- Attendance Scanner Section -->
+    <!-- Scanner -->
     <div class="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-lg">
       <h2 class="text-sm font-bold text-gray-200 mb-3">📷 Member Attendance Scanner</h2>
       <button id="startScanBtn" type="button" onclick="startScannerNow()" class="w-full bg-gray-800 border border-gray-700 text-xs font-semibold py-3 rounded-xl mb-3 hover:bg-gray-700 text-gray-200">Start Camera Scanner</button>
