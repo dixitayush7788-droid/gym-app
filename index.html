@@ -3,14 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gym Member Portal</title>
+  <title>Beast Gym Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <style>
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.7); }
+    }
+    .neon-card { animation: pulseGlow 3s infinite; }
+  </style>
   <script>
     const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
     var db = null;
+    var currentMember = null;
 
     function initClient() {
       try {
@@ -18,8 +25,26 @@
           db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         }
       } catch (e) {
-        console.log("DB Init Error: ", e);
+        console.log("DB Error: ", e);
       }
+    }
+
+    // Sound effect on check-in
+    function playBeastSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } catch (e) {}
     }
 
     async function searchMember() {
@@ -32,7 +57,7 @@
       card.style.display = "none";
 
       if (!phone) {
-        errorMsg.innerText = "Kripya 10-digit mobile number enter karein!";
+        errorMsg.innerText = "Mobile number enter karein!";
         errorMsg.style.display = "block";
         return;
       }
@@ -43,43 +68,38 @@
       if (!db) initClient();
 
       try {
-        const { data, error } = await db
-          .from('members')
-          .select('*')
-          .eq('phone', phone)
-          .single();
-
+        const { data, error } = await db.from('members').select('*').eq('phone', phone).single();
         btn.innerText = "Search";
         btn.disabled = false;
 
         if (error || !data) {
-          errorMsg.innerText = "❌ Member record nahi mila. Admin se sampark karein.";
+          errorMsg.innerText = "❌ Member record nahi mila. Gym reception par sampark karein.";
           errorMsg.style.display = "block";
           return;
         }
 
+        currentMember = data;
         document.getElementById("memberName").innerText = data.full_name;
         document.getElementById("memberPhone").innerText = "+91 " + data.phone;
         document.getElementById("planDuration").innerText = data.plan_duration_months + " Month(s)";
         document.getElementById("expiryDate").innerText = data.expiry_date;
-        document.getElementById("feesPaid").innerText = "₹" + (data.fees_paid || 0);
+        document.getElementById("streakCount").innerText = (data.streak_count || 0) + " Days";
 
         var today = new Date();
         var expiry = new Date(data.expiry_date);
-        var diffTime = expiry - today;
-        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        var diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
         
         var badge = document.getElementById("statusBadge");
         var daysText = document.getElementById("daysLeft");
 
         if (diffDays >= 0) {
-          badge.innerText = "Active Membership";
-          badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+          badge.innerText = "⚡ ACTIVE BEAST";
+          badge.className = "text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
           daysText.innerText = diffDays + " Days";
           daysText.className = "text-3xl font-black text-emerald-400";
         } else {
-          badge.innerText = "Plan Expired";
-          badge.className = "text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase bg-rose-500/20 text-rose-400 border border-rose-500/30";
+          badge.innerText = "🛑 PLAN EXPIRED";
+          badge.className = "text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase bg-rose-500/20 text-rose-400 border border-rose-500/40";
           daysText.innerText = "Expired";
           daysText.className = "text-3xl font-black text-rose-400";
         }
@@ -88,8 +108,46 @@
       } catch (err) {
         btn.innerText = "Search";
         btn.disabled = false;
-        errorMsg.innerText = "Connection error: " + err.message;
+        errorMsg.innerText = "Error: " + err.message;
         errorMsg.style.display = "block";
+      }
+    }
+
+    async function punchAttendance() {
+      if (!currentMember) return;
+      var punchBtn = document.getElementById("punchBtn");
+      var punchStatus = document.getElementById("punchStatus");
+
+      punchBtn.innerText = "Marking...";
+      punchBtn.disabled = true;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      if (currentMember.last_checkin === todayStr) {
+        punchStatus.innerText = "⚠️ Aaj ki attendance pehle hi marked hai!";
+        punchStatus.className = "text-xs font-bold text-yellow-400 mt-2 text-center block";
+        punchBtn.innerText = "⚡ Self Check-in (Punched)";
+        return;
+      }
+
+      var newStreak = (currentMember.streak_count || 0) + 1;
+
+      const { error: logErr } = await db.from('attendance_logs').insert([{ member_id: currentMember.id, phone: currentMember.phone }]);
+      const { error: updateErr } = await db.from('members').update({ streak_count: newStreak, last_checkin: todayStr }).eq('id', currentMember.id);
+
+      punchBtn.disabled = false;
+      punchBtn.innerText = "⚡ Punch Gym Attendance";
+
+      if (!logErr && !updateErr) {
+        playBeastSound();
+        currentMember.streak_count = newStreak;
+        currentMember.last_checkin = todayStr;
+        document.getElementById("streakCount").innerText = newStreak + " Days";
+        punchStatus.innerText = "🔥 Access Granted! Attendance Marked. Streak +1!";
+        punchStatus.className = "text-xs font-bold text-emerald-400 mt-2 text-center block";
+      } else {
+        punchStatus.innerText = "❌ Check-in Failed!";
+        punchStatus.className = "text-xs font-bold text-rose-400 mt-2 text-center block";
       }
     }
   </script>
@@ -97,53 +155,58 @@
 <body class="bg-gray-950 text-white min-h-screen flex flex-col items-center p-4">
 
   <div class="w-full max-w-md my-auto">
-    <!-- Header -->
+    <!-- Brand Header -->
     <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold tracking-tight text-white">💪 GYM MEMBER PORTAL</h1>
-      <p class="text-xs text-gray-400 mt-1">Apna registered mobile number enter karein</p>
+      <div class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full text-emerald-400 text-xs font-bold uppercase mb-2">⚡ BEAST MODE PORTAL</div>
+      <h1 class="text-3xl font-black tracking-tight text-white uppercase">Gym Digital Pass</h1>
     </div>
 
     <!-- Search Box -->
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-xl">
-      <label class="block text-xs font-semibold text-gray-400 uppercase mb-2">Phone Number</label>
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl p-5 shadow-2xl">
+      <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Enter Mobile Number</label>
       <div class="flex gap-2">
-        <input id="phoneInput" type="tel" placeholder="10-digit number" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-500" />
-        <button id="searchBtn" type="button" onclick="searchMember()" class="bg-emerald-500 active:scale-95 hover:bg-emerald-600 font-semibold px-5 py-3 rounded-xl transition-all text-white shadow-lg shadow-emerald-500/20">Search</button>
+        <input id="phoneInput" type="tel" placeholder="10-digit number" class="w-full bg-gray-800/80 border border-gray-700/80 rounded-2xl px-4 py-3 text-white text-base focus:outline-none focus:border-emerald-500" />
+        <button id="searchBtn" type="button" onclick="searchMember()" class="bg-emerald-500 active:scale-95 hover:bg-emerald-600 font-bold px-6 py-3 rounded-2xl transition-all text-white shadow-lg shadow-emerald-500/20">Search</button>
       </div>
       <p id="errorMsg" style="display:none;" class="text-rose-400 text-xs mt-3 font-semibold"></p>
     </div>
 
-    <!-- Digital Gym Pass Card -->
-    <div id="memberCard" style="display:none;" class="mt-6 bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-      <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
-
-      <div class="flex justify-between items-start mb-6">
+    <!-- Cyberpunk Member Pass -->
+    <div id="memberCard" style="display:none;" class="mt-6 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl neon-card">
+      <div class="flex justify-between items-start mb-4">
         <div>
-          <span id="statusBadge" class="text-[10px] font-bold tracking-wider px-3 py-1 rounded-full uppercase"></span>
+          <span id="statusBadge" class="text-[10px] font-black tracking-wider px-3 py-1 rounded-full uppercase"></span>
           <h2 id="memberName" class="text-2xl font-black mt-3 text-white capitalize"></h2>
           <p id="memberPhone" class="text-xs text-gray-400 font-medium"></p>
         </div>
+        <div class="text-right">
+          <p class="text-[10px] text-gray-400 uppercase font-semibold">Validity Left</p>
+          <p id="daysLeft" class="text-3xl font-black text-emerald-400 mt-0.5"></p>
+        </div>
       </div>
 
-      <!-- Validity Highlight -->
-      <div class="bg-gray-800/60 border border-gray-700/50 rounded-2xl p-4 mb-4 text-center">
-        <p class="text-[11px] text-gray-400 uppercase font-semibold">Remaining Validity</p>
-        <p id="daysLeft" class="text-3xl font-black text-emerald-400 mt-1"></p>
+      <!-- Streaks & Checkin Module -->
+      <div class="bg-gray-950/80 border border-gray-800 rounded-2xl p-4 my-4">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <p class="text-[10px] text-gray-400 font-bold uppercase">Workout Streak 🔥</p>
+            <p id="streakCount" class="text-2xl font-black text-amber-400">0 Days</p>
+          </div>
+          <span class="text-2xl">🔥</span>
+        </div>
+        <button id="punchBtn" type="button" onclick="punchAttendance()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 active:scale-98 font-black text-xs uppercase tracking-wider py-3 rounded-xl shadow-lg transition-all text-white">⚡ Self Check-in (Punch Attendance)</button>
+        <p id="punchStatus" style="display:none;"></p>
       </div>
 
-      <!-- Membership Specs -->
-      <div class="grid grid-cols-3 gap-2.5 text-xs text-center">
+      <!-- Membership Details -->
+      <div class="grid grid-cols-2 gap-3 text-xs text-center">
         <div class="bg-gray-800/40 border border-gray-800 p-3 rounded-xl">
-          <p class="text-gray-400 text-[10px] uppercase font-semibold">Plan</p>
+          <p class="text-gray-400 text-[10px] uppercase font-semibold">Plan Type</p>
           <p id="planDuration" class="font-bold text-white mt-1"></p>
         </div>
         <div class="bg-gray-800/40 border border-gray-800 p-3 rounded-xl">
-          <p class="text-gray-400 text-[10px] uppercase font-semibold">Expires On</p>
+          <p class="text-gray-400 text-[10px] uppercase font-semibold">Expiry Date</p>
           <p id="expiryDate" class="font-bold text-white mt-1"></p>
-        </div>
-        <div class="bg-gray-800/40 border border-gray-800 p-3 rounded-xl">
-          <p class="text-gray-400 text-[10px] uppercase font-semibold">Paid</p>
-          <p id="feesPaid" class="font-bold text-emerald-400 mt-1"></p>
         </div>
       </div>
     </div>
