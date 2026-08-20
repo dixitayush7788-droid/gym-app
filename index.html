@@ -1,1687 +1,493 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark h-full bg-[#09090b]">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#09090b" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>BEAST GYM // Member Portal</title>
-  <meta name="description" content="Cyberpunk Beast Gym Member Portal & Holographic Digital Pass with Real-Time Supabase Sync" />
-
-  <!-- Google Fonts: Orbitron, Rajdhani, Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- Tailwind CSS CDN -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>RETRO GYM — Member Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Syne:wght@700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            cyber: ['"Orbitron"', 'sans-serif'],
-            tech: ['"Rajdhani"', 'sans-serif'],
-          },
-          colors: {
-            zinc: {
-              950: '#09090b',
-              900: '#121217',
-              850: '#181820',
-              800: '#23232e',
-            },
-            cyber: {
-              emerald: '#10b981',
-              emeraldGlow: '#00ff9d',
-              cyan: '#06b6d4',
-              cyanGlow: '#22d3ee',
-              crimson: '#ef4444',
-              crimsonGlow: '#ff3366',
-              amber: '#f59e0b',
-              purple: '#a855f7',
-            }
-          },
-          boxShadow: {
-            'neon-emerald': '0 0 20px -2px rgba(16, 185, 129, 0.5), 0 0 40px -4px rgba(0, 255, 157, 0.25)',
-            'neon-crimson': '0 0 20px -2px rgba(239, 68, 68, 0.5), 0 0 40px -4px rgba(255, 51, 102, 0.25)',
-            'neon-cyan': '0 0 20px -2px rgba(6, 182, 212, 0.5), 0 0 40px -4px rgba(34, 211, 238, 0.25)',
-            'holo': 'inset 0 0 15px rgba(16, 185, 129, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.7)',
-          },
-          animation: {
-            'pulse-glow': 'pulseGlow 2.5s infinite ease-in-out',
-            'laser-scan': 'laserScan 3s infinite linear',
-          },
-          keyframes: {
-            pulseGlow: {
-              '0%, 100%': { opacity: '1', transform: 'scale(1)' },
-              '50%': { opacity: '0.75', transform: 'scale(1.02)' },
-            },
-            laserScan: {
-              '0%': { top: '0%' },
-              '50%': { top: '95%' },
-              '100%': { top: '0%' },
-            }
-          }
+          colors: { oled: '#09090b', card: '#131316', cardMuted: '#1a1a1f', accent: '#10b981', lime: '#84cc16' },
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'], display: ['"Syne"', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] }
         }
       }
     }
   </script>
-
-  <!-- Supabase JS v2 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    /* Cyberpunk Scanlines & Holographic Glass */
-    body {
-      background-color: #09090b;
-      color: #f4f4f5;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      overflow-x: hidden;
-      -webkit-tap-highlight-color: transparent;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    .cyber-grid {
-      background-size: 36px 36px;
-      background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-    }
-
-    .holo-card {
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(135deg, rgba(24, 24, 32, 0.85) 0%, rgba(18, 18, 23, 0.95) 100%);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
-
-    .holo-sheen {
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(
-        45deg,
-        transparent 40%,
-        rgba(0, 255, 157, 0.06) 45%,
-        rgba(6, 182, 212, 0.09) 50%,
-        rgba(168, 85, 247, 0.06) 55%,
-        transparent 60%
-      );
-      transform: rotate(35deg);
-      pointer-events: none;
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #09090b;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #27272a;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #10b981;
-    }
-
-    /* Laser Scanner Effect */
-    .barcode-scanner {
-      position: relative;
-      overflow: hidden;
-    }
-    .barcode-scanner::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #00ff9d;
-      box-shadow: 0 0 8px #00ff9d, 0 0 16px #10b981;
-      animation: laserScan 2.2s infinite ease-in-out;
-    }
-
-    /* Tab Transition */
-    .app-view {
-      display: none;
-      opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-    }
-    .app-view.active-view {
-      display: block;
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* Safe bottom spacing for fixed nav */
-    .pb-nav-safe {
-      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
-    }
-  </style>
 </head>
-<body class="min-h-screen relative flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
+<body class="h-full bg-oled text-zinc-100 font-sans antialiased select-none pb-24 overflow-x-hidden">
 
-  <!-- Ambient Cyber Overlays -->
-  <div class="fixed inset-0 cyber-grid pointer-events-none z-0"></div>
-  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
-  <div class="fixed bottom-12 right-0 w-[450px] h-[300px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+  <!-- Toast Layer -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none w-11/12 max-w-sm p-3.5 rounded-2xl bg-card/95 border border-accent/40 text-xs shadow-2xl backdrop-blur-md flex items-center gap-2.5"></div>
 
-  <!-- Notification Toast Container -->
-  <div id="toast-container" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-96 z-50 pointer-events-none flex flex-col gap-2"></div>
+  <!-- AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-card rounded-3xl border border-white/10 p-6 shadow-2xl space-y-4">
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-2xl bg-accent/20 border border-accent/40 text-accent font-display font-black text-xl flex items-center justify-center mx-auto mb-2">⚡</div>
+        <h1 class="font-display font-black text-xl text-white tracking-tight">RETRO GYM</h1>
+        <p class="text-xs font-mono text-zinc-400">Digital Member Passkey</p>
+      </div>
 
-  <!-- MAIN APP CONTAINER -->
-  <div class="relative z-10 w-full max-w-4xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 flex-1 flex flex-col pb-nav-safe">
-    
-    <!-- Top Cyber Header Navigation -->
-    <header class="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-zinc-800/80">
-      <div class="flex items-center gap-3">
-        <div class="relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-zinc-900 border border-emerald-500/40 shadow-neon-emerald">
-          <span class="text-xl font-black text-emerald-400 font-cyber">⚡</span>
-          <span class="absolute -bottom-1 -right-1 flex h-2.5 w-2.5">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-          </span>
+      <!-- Step 1: Phone -->
+      <div id="auth-step-phone" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-zinc-400 uppercase mb-1">Registered Phone</label>
+          <input type="tel" id="auth-phone" placeholder="e.g. 9876543210" class="w-full bg-cardMuted border border-white/10 focus:border-accent rounded-xl py-3 px-3 text-white font-mono outline-none text-sm" />
+        </div>
+        <button onclick="handlePhoneVerify()" class="w-full py-3 bg-accent text-black font-display font-bold text-xs rounded-xl uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all">Continue →</button>
+      </div>
+
+      <!-- Step 2: PIN Verification / Setup -->
+      <div id="auth-step-pin" class="space-y-3 hidden">
+        <div class="p-2.5 bg-cardMuted rounded-xl flex items-center justify-between text-xs font-mono">
+          <span id="auth-user-name" class="text-white font-bold truncate">Member</span>
+          <button onclick="resetAuthStep()" class="text-[10px] text-zinc-400 hover:text-white underline">Change</button>
         </div>
         <div>
-          <div class="flex items-center gap-1.5">
-            <h1 class="font-cyber font-extrabold text-lg sm:text-xl tracking-wider text-white">
-              BEAST <span class="text-emerald-400">GYM</span>
-            </h1>
-            <span class="px-1.5 py-0.5 text-[9px] font-tech font-bold uppercase tracking-widest bg-emerald-950/90 text-emerald-300 border border-emerald-500/30 rounded-md">
-              PORTAL
-            </span>
-          </div>
-          <p class="text-[11px] font-tech text-zinc-400 tracking-wider">CYBERNETIC MEMBER HUD</p>
+          <label id="auth-pin-label" class="block text-[10px] font-mono text-zinc-400 uppercase mb-1">Enter 4-Digit PIN</label>
+          <input type="password" id="auth-pin-input" maxlength="4" placeholder="••••" class="w-full bg-cardMuted border border-white/10 focus:border-accent rounded-xl py-2.5 text-center text-xl font-mono text-white tracking-widest outline-none" />
+        </div>
+        <button onclick="handlePinSubmit()" class="w-full py-3 bg-accent text-black font-display font-bold text-xs rounded-xl uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all">Unlock Pass ⚡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE-OUT SIDEBAR DRAWER -->
+  <div id="drawer" class="fixed inset-0 z-40 pointer-events-none">
+    <div id="drawer-backdrop" onclick="toggleDrawer(false)" class="fixed inset-0 bg-black/75 backdrop-blur-sm opacity-0 transition-opacity duration-300 pointer-events-none"></div>
+    <aside id="drawer-panel" class="fixed top-0 left-0 bottom-0 w-4/5 max-w-xs bg-card border-r border-white/10 p-5 shadow-2xl -translate-x-full transition-transform duration-300 overflow-y-auto space-y-4 pointer-events-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="text-accent text-lg font-black font-display">⚡</span>
+          <span class="font-display font-bold text-sm text-white">RETRO CLUB</span>
+        </div>
+        <button onclick="toggleDrawer(false)" class="text-zinc-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <!-- Member Tag -->
+      <div class="bg-cardMuted p-3 rounded-2xl border border-white/5 flex items-center gap-3">
+        <div id="drawer-avatar" class="w-10 h-10 rounded-xl bg-accent/20 text-accent font-display font-black text-sm flex items-center justify-center">RG</div>
+        <div class="min-w-0">
+          <p id="drawer-name" class="text-xs font-bold text-white truncate">Member</p>
+          <p id="drawer-phone" class="text-[10px] font-mono text-zinc-400">--</p>
         </div>
       </div>
 
-      <!-- Header Right: Switch Member & Live Clock -->
-      <div class="flex items-center gap-2">
-        <button 
-          id="header-switch-btn"
-          type="button" 
-          onclick="handleLogout()"
-          class="hidden px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-tech font-bold uppercase tracking-wider transition-all border border-zinc-800 flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Switch</span>
-          <span class="text-red-400 font-mono">✕</span>
-        </button>
-        <div id="live-clock" class="px-2.5 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs font-mono font-bold text-zinc-300 tracking-wider">
-          --:--:--
+      <!-- Notice Board -->
+      <div class="bg-cardMuted p-3 rounded-2xl border border-white/5 space-y-1 text-[11px]">
+        <p class="text-amber-400 font-mono font-bold">📢 Notice Board</p>
+        <p class="text-zinc-300">Sunday: 7:00 AM – 12:00 PM • Free electrolytes at Zone B.</p>
+      </div>
+
+      <!-- Dynamic Crowd Meter -->
+      <div class="bg-cardMuted p-3 rounded-2xl border border-white/5 space-y-1.5 text-xs">
+        <div class="flex justify-between items-center text-[10px] font-mono">
+          <span class="text-zinc-400">🕒 Gym Crowd Meter</span>
+          <span id="crowd-badge" class="text-emerald-400 font-bold">Moderate</span>
         </div>
+        <div class="w-full bg-zinc-800 rounded-full h-1.5"><div id="crowd-bar" class="bg-accent h-1.5 rounded-full" style="width: 45%;"></div></div>
+      </div>
+
+      <!-- Body Stat Logger -->
+      <div class="bg-cardMuted p-3 rounded-2xl border border-white/5 space-y-2 text-xs">
+        <span class="text-[10px] font-mono text-zinc-400 block">📏 Body Metric Quick Log</span>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="number" id="drawer-weight" placeholder="Weight kg" class="bg-oled border border-white/10 rounded-xl p-1.5 text-xs font-mono text-white outline-none" />
+          <input type="number" id="drawer-waist" placeholder="Waist in" class="bg-oled border border-white/10 rounded-xl p-1.5 text-xs font-mono text-white outline-none" />
+        </div>
+        <button onclick="saveBodyStats()" class="w-full py-1.5 bg-zinc-800 hover:bg-accent hover:text-black rounded-xl font-mono text-[10px] font-bold text-zinc-300 transition-all">Save Metrics</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="space-y-2 pt-2 border-t border-white/10">
+        <button onclick="openUpiModal()" class="w-full py-2.5 bg-accent text-black font-display font-black text-xs rounded-xl shadow-lg uppercase">⚡ 1-Tap UPI Renew (₹1,200)</button>
+        <button onclick="promptChangePin()" class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-mono text-xs rounded-xl">🔒 Change PIN</button>
+        <a id="drawer-whatsapp" href="https://wa.me/918467895365" target="_blank" class="w-full py-2 bg-[#075e54]/50 border border-[#25d366]/30 text-[#25d366] font-mono text-xs rounded-xl flex items-center justify-center gap-1">💬 Reception Desk</a>
+        <button onclick="handleLogout()" class="w-full py-2 text-red-400 font-mono text-xs hover:underline">Logout Account ✕</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- UPI PAYMENT MODAL -->
+  <div id="upi-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-sm bg-card rounded-3xl border border-white/15 p-5 shadow-2xl space-y-3.5 text-center">
+      <div class="flex justify-between items-center pb-2 border-b border-white/10">
+        <span class="font-display font-bold text-sm text-white">1-TAP MEMBERSHIP RENEWAL</span>
+        <button onclick="closeUpiModal()" class="text-zinc-400 hover:text-white">✕</button>
+      </div>
+      <div class="bg-cardMuted p-3 rounded-2xl">
+        <span class="text-[10px] font-mono text-zinc-400 block">Total Renewal Fee (0% Comm)</span>
+        <p class="font-display font-black text-2xl text-accent">₹1,200 <span class="text-xs font-mono text-zinc-400">/ 30 Days</span></p>
+        <p class="text-[10px] font-mono text-zinc-500 mt-0.5">VPA: <span class="text-zinc-300">retrogym@upi</span></p>
+      </div>
+      <a id="upi-intent-link" href="upi://pay?pa=retrogym@upi&pn=RETRO%20GYM&am=1200&cu=INR&tn=Retro%20Gym%20Renewal" class="w-full py-3 bg-gradient-to-r from-accent to-lime text-black font-display font-black text-xs rounded-2xl block uppercase tracking-wider shadow-lg">⚡ Pay via UPI App (GPay/PhonePe)</a>
+      <div class="bg-white p-2.5 rounded-2xl inline-block shadow-md">
+        <img id="upi-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=upi%3A%2F%2Fpay%3Fpa%3Dretrogym%40upi%26pn%3DRETRO%2520GYM%26am%3D1200%26cu%3DINR%26tn%3DRenewal" alt="UPI QR" class="w-28 h-28 mx-auto" />
+      </div>
+      <button onclick="confirmUpiWhatsApp()" class="w-full py-2 bg-[#075e54]/50 border border-[#25d366]/40 text-[#25d366] font-mono text-xs rounded-xl">💬 Send Receipt on WhatsApp</button>
+    </div>
+  </div>
+
+  <!-- APP CONTAINER -->
+  <div class="max-w-md mx-auto p-4 space-y-4">
+    <!-- Header -->
+    <header class="flex items-center justify-between pb-2 border-b border-white/10">
+      <div class="flex items-center gap-2.5">
+        <button onclick="toggleDrawer(true)" class="w-9 h-9 rounded-xl bg-cardMuted border border-white/10 text-accent flex items-center justify-center font-bold text-base">☰</button>
+        <div>
+          <h1 class="font-display font-black text-sm text-white leading-tight">RETRO GYM</h1>
+          <p class="text-[9px] font-mono text-zinc-500">MEMBER PORTAL</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div id="header-avatar" class="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 text-accent font-display font-bold text-xs flex items-center justify-center">RG</div>
+        <button onclick="handleLogout()" class="text-xs font-mono text-zinc-400 hover:text-white px-2 py-1 bg-cardMuted rounded-xl border border-white/5">Switch ✕</button>
       </div>
     </header>
 
-    <!-- ======================================================== -->
-    <!-- VIEW 0: FRESH SEARCH & TERMINAL LOGIN SCREEN -->
-    <!-- ======================================================== -->
-    <div id="search-view" class="w-full max-w-md mx-auto my-auto py-8">
-      <div class="holo-card rounded-3xl p-6 sm:p-8 border border-zinc-800 shadow-2xl relative">
-        <div class="holo-sheen"></div>
-        
-        <!-- Header -->
-        <div class="text-center mb-6">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-2xl mb-3 shadow-neon-emerald">
-            ⚡
-          </div>
-          <h2 class="font-cyber text-2xl font-bold tracking-wide text-white">MEMBER ACCESS</h2>
-          <p class="text-xs text-zinc-400 mt-1 font-tech uppercase tracking-wider">ENTER REGISTERED 10-DIGIT MOBILE NUMBER</p>
-        </div>
-
-        <!-- Phone Search Form -->
-        <form id="phone-search-form" class="space-y-4" onsubmit="handlePhoneSearch(event)">
-          <div>
-            <label for="phone-input" class="block text-xs font-tech font-semibold uppercase tracking-wider text-zinc-300 mb-2">
-              Mobile Number
-            </label>
-            <div class="relative flex items-center">
-              <span class="absolute left-4 text-emerald-400 font-mono font-bold text-sm select-none">
-                +91
-              </span>
-              <input 
-                type="tel" 
-                id="phone-input" 
-                maxlength="10" 
-                placeholder="Enter 10-digit mobile"
-                required
-                autocomplete="tel"
-                class="w-full bg-zinc-950/90 border border-zinc-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-white font-mono text-lg tracking-widest rounded-2xl pl-14 pr-4 py-3.5 outline-none transition-all placeholder:text-zinc-600 placeholder:text-sm placeholder:font-sans"
-              />
+    <!-- TAB 1: PASS -->
+    <section id="tab-pass" class="tab-view space-y-4">
+      <div class="p-[1.5px] rounded-3xl bg-gradient-to-tr from-accent/50 via-lime/30 to-purple-500/40 shadow-2xl">
+        <div class="bg-gradient-to-b from-[#18181d] to-[#0f0f12] rounded-[22px] p-5 space-y-4 relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-accent/20 text-accent border border-accent/40">VIP PASS</span>
+              <h2 id="pass-name" class="font-display font-black text-lg text-white mt-2">Member</h2>
+              <p id="pass-phone" class="text-xs font-mono text-zinc-400">--</p>
+            </div>
+            <div class="text-center bg-cardMuted/80 border border-white/5 px-3 py-2 rounded-2xl">
+              <span id="pass-days-left" class="font-display font-black text-2xl text-accent block leading-tight">28</span>
+              <span class="text-[8px] font-mono text-zinc-400 uppercase">Days Left</span>
             </div>
           </div>
-
-          <button 
-            type="submit" 
-            id="search-btn"
-            class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 text-zinc-950 font-cyber font-bold tracking-wider text-sm flex items-center justify-center gap-2 shadow-neon-emerald hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
-          >
-            <span>INITIALIZE MEMBER HUD</span>
-            <span class="text-lg">→</span>
-          </button>
-        </form>
-
-        <div class="mt-6 pt-4 border-t border-zinc-800/60 text-center">
-          <p class="text-[11px] font-tech text-zinc-500 flex items-center justify-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span>DIRECT ENCRYPTED LINK TO SUPABASE DATABASE</span>
-          </p>
+          <div class="grid grid-cols-2 gap-2 text-xs bg-black/40 p-2.5 rounded-2xl border border-white/5 font-mono">
+            <div><span class="text-[9px] text-zinc-500 block">EXPIRES</span><span id="pass-expiry" class="font-bold text-zinc-200">19 Sep 2026</span></div>
+            <div><span class="text-[9px] text-zinc-500 block">STREAK</span><span class="font-bold text-orange-400 flex items-center gap-1">🔥 <span id="pass-streak">0</span> Days</span></div>
+          </div>
+          <div class="text-center font-mono text-[9px] text-zinc-500 tracking-[0.3em] bg-black/60 py-1.5 rounded-xl" id="pass-barcode">RT-MEMBER-PASS</div>
         </div>
-
       </div>
-    </div>
 
-    <!-- ======================================================== -->
-    <!-- PORTAL TABS WRAPPER -->
-    <!-- ======================================================== -->
-    <main id="portal-view" class="w-full hidden flex-1 flex flex-col">
+      <!-- 1-Tap Attendance Punch -->
+      <div class="bg-card rounded-3xl p-4 border border-white/10 space-y-2.5 shadow-lg">
+        <div class="flex justify-between text-xs font-mono">
+          <span class="text-zinc-400">Attendance Telemetry</span>
+          <span id="punch-status" class="text-zinc-400 font-bold">Ready</span>
+        </div>
+        <button id="btn-punch" onclick="logAttendance()" class="w-full py-4 bg-gradient-to-r from-accent to-lime text-black font-display font-black text-sm rounded-2xl shadow-lg active:scale-95 transition-all uppercase tracking-wide flex items-center justify-center gap-2">
+          <span>⚡</span><span id="btn-punch-text">LOG TODAY'S ATTENDANCE</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 2: ACTIVITY -->
+    <section id="tab-activity" class="tab-view space-y-3 hidden">
+      <div class="flex justify-between items-center">
+        <h2 class="font-display font-black text-lg text-white">ATTENDANCE LOGS</h2>
+        <button onclick="fetchAttendance()" class="text-xs font-mono text-accent hover:underline">Sync ⟳</button>
+      </div>
+      <div id="activity-list" class="space-y-2 max-h-[420px] overflow-y-auto pr-1"></div>
+    </section>
+
+    <!-- TAB 3: NUTRITION -->
+    <section id="tab-nutrition" class="tab-view space-y-4 hidden">
+      <h2 class="font-display font-black text-lg text-white">VEG MACRO CALCULATOR</h2>
+      <div class="bg-card rounded-3xl p-4 border border-white/10 space-y-3">
+        <div class="flex justify-between text-xs font-mono">
+          <span class="text-zinc-400">Bodyweight:</span>
+          <span class="text-accent font-bold"><span id="nutri-weight-label">72</span> KG</span>
+        </div>
+        <input type="range" id="nutri-slider" min="50" max="110" value="72" oninput="updateNutrition(this.value)" class="w-full accent-emerald-400 bg-cardMuted h-2 rounded-lg cursor-pointer" />
+        <div class="grid grid-cols-3 gap-2 text-center pt-2">
+          <div class="bg-cardMuted p-2.5 rounded-2xl border border-white/5"><span class="text-[9px] font-mono text-zinc-500 block">PROTEIN</span><span id="nutri-protein" class="font-display font-black text-base text-accent">144g</span></div>
+          <div class="bg-cardMuted p-2.5 rounded-2xl border border-white/5"><span class="text-[9px] font-mono text-zinc-500 block">ENERGY</span><span id="nutri-calories" class="font-display font-black text-base text-amber-400">2450</span></div>
+          <div class="bg-cardMuted p-2.5 rounded-2xl border border-white/5"><span class="text-[9px] font-mono text-zinc-500 block">HYDRATION</span><span id="nutri-water" class="font-display font-black text-base text-sky-400">3.6L</span></div>
+        </div>
+      </div>
+      <div class="bg-card rounded-3xl p-4 border border-white/10 space-y-2 text-xs">
+        <span class="font-mono font-bold text-white block">🌱 Top Veg Sources / 100g</span>
+        <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+          <div class="bg-cardMuted p-2 rounded-xl border border-white/5 flex justify-between"><span>Soya Chunks</span><span class="text-accent font-bold">52g</span></div>
+          <div class="bg-cardMuted p-2 rounded-xl border border-white/5 flex justify-between"><span>Paneer (Low Fat)</span><span class="text-accent font-bold">20g</span></div>
+          <div class="bg-cardMuted p-2 rounded-xl border border-white/5 flex justify-between"><span>Tofu</span><span class="text-accent font-bold">17g</span></div>
+          <div class="bg-cardMuted p-2 rounded-xl border border-white/5 flex justify-between"><span>Sprouts</span><span class="text-accent font-bold">24g</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: WORKOUTS -->
+    <section id="tab-workouts" class="tab-view space-y-4 hidden">
+      <h2 class="font-display font-black text-lg text-white">6-DAY HYPERTROPHY PROTOCOL</h2>
+      <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs font-mono">
+        <button onclick="renderWorkout(1)" id="wday-1" class="wday-btn px-3 py-1.5 rounded-xl bg-accent text-black font-bold shrink-0">Day 1: Chest/Tri</button>
+        <button onclick="renderWorkout(2)" id="wday-2" class="wday-btn px-3 py-1.5 rounded-xl bg-cardMuted text-zinc-300 shrink-0">Day 2: Back/Bi</button>
+        <button onclick="renderWorkout(3)" id="wday-3" class="wday-btn px-3 py-1.5 rounded-xl bg-cardMuted text-zinc-300 shrink-0">Day 3: Legs</button>
+        <button onclick="renderWorkout(4)" id="wday-4" class="wday-btn px-3 py-1.5 rounded-xl bg-cardMuted text-zinc-300 shrink-0">Day 4: Shoulders</button>
+        <button onclick="renderWorkout(5)" id="wday-5" class="wday-btn px-3 py-1.5 rounded-xl bg-cardMuted text-zinc-300 shrink-0">Day 5: Arms</button>
+        <button onclick="renderWorkout(6)" id="wday-6" class="wday-btn px-3 py-1.5 rounded-xl bg-cardMuted text-zinc-300 shrink-0">Day 6: HIIT</button>
+      </div>
+      <div id="workout-list" class="space-y-2"></div>
       
-      <!-- Top Member Mini Banner -->
-      <div class="flex items-center justify-between p-3.5 mb-4 rounded-2xl bg-zinc-900/90 border border-zinc-800">
-        <div class="flex items-center gap-3">
-          <div id="avatar-initials" class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-500/40 flex items-center justify-center font-cyber font-bold text-emerald-400 text-sm">
-            BG
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span id="member-name-bar" class="font-bold text-white text-sm sm:text-base truncate max-w-[160px] sm:max-w-xs">--</span>
-              <span id="member-rank-badge-bar" class="text-[10px] font-tech font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                --
-              </span>
-            </div>
-            <p id="member-phone-bar" class="text-xs font-mono text-zinc-400">--</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-cyber font-extrabold text-amber-400" id="header-streak-pill">🔥 0D</span>
+      <!-- Rest Timer -->
+      <div class="bg-card rounded-3xl p-4 border border-accent/30 space-y-2 text-center">
+        <div class="flex justify-between items-center text-xs font-mono"><span class="text-zinc-400">Rest Timer</span><span id="timer-val" class="font-display font-black text-2xl text-white">60s</span></div>
+        <div class="flex justify-center gap-2">
+          <button onclick="toggleTimer()" id="timer-btn" class="py-2 px-5 bg-accent text-black font-display font-bold text-xs rounded-xl uppercase">Start ▶</button>
+          <button onclick="setTimerPreset(30)" class="py-2 px-3 bg-cardMuted text-zinc-300 text-xs rounded-xl font-mono">30s</button>
+          <button onclick="setTimerPreset(60)" class="py-2 px-3 bg-cardMuted text-zinc-300 text-xs rounded-xl font-mono">60s</button>
+          <button onclick="setTimerPreset(90)" class="py-2 px-3 bg-cardMuted text-zinc-300 text-xs rounded-xl font-mono">90s</button>
         </div>
       </div>
-
-      <!-- ====================================================== -->
-      <!-- TAB 1: PASS VIEW -->
-      <!-- ====================================================== -->
-      <section id="view-pass" class="app-view active-view space-y-4">
-        
-        <!-- Holographic Pass Card -->
-        <div id="pass-card" class="holo-card rounded-3xl p-5 sm:p-7 border relative transition-all duration-500 shadow-2xl">
-          <div class="holo-sheen"></div>
-
-          <!-- Pass Top Header -->
-          <div class="flex items-start justify-between gap-3 pb-4 border-b border-zinc-800">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-emerald-400 text-lg font-cyber">⚡</span>
-                <h3 class="font-cyber font-bold text-base sm:text-lg tracking-wider text-white">
-                  BEAST DIGITAL PASS
-                </h3>
-              </div>
-              <p class="text-[11px] font-tech tracking-widest text-zinc-400">ACCESS TOKEN // 2026</p>
-            </div>
-            
-            <div id="pass-status-badge" class="px-3 py-1 rounded-xl font-cyber text-xs font-bold tracking-wider flex items-center gap-1.5 border">
-              <!-- Injected via JS -->
-            </div>
-          </div>
-
-          <!-- Member Details Grid -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 my-5">
-            <div>
-              <span class="text-[10px] font-tech uppercase tracking-widest text-zinc-500 block">Member Name</span>
-              <span id="pass-member-name" class="font-bold text-white text-sm sm:text-base tracking-wide block truncate">
-                --
-              </span>
-            </div>
-            <div>
-              <span class="text-[10px] font-tech uppercase tracking-widest text-zinc-500 block">Phone</span>
-              <span id="pass-phone" class="font-mono font-semibold text-zinc-200 text-xs sm:text-sm block">
-                --
-              </span>
-            </div>
-            <div>
-              <span class="text-[10px] font-tech uppercase tracking-widest text-zinc-500 block">Membership Tier</span>
-              <span id="pass-plan-name" class="font-tech font-bold text-emerald-400 text-xs sm:text-sm block uppercase tracking-wider">
-                --
-              </span>
-            </div>
-            <div>
-              <span class="text-[10px] font-tech uppercase tracking-widest text-zinc-500 block">Valid Until</span>
-              <span id="pass-expiry-date" class="font-mono font-semibold text-zinc-200 text-xs sm:text-sm block">
-                --
-              </span>
-            </div>
-            <div>
-              <span class="text-[10px] font-tech uppercase tracking-widest text-zinc-500 block">Member ID</span>
-              <span id="pass-member-id" class="font-mono text-zinc-400 text-xs block">
-                --
-              </span>
-            </div>
-            <div>
-              <span class="text-[10px] font-tech uppercase tracking-widest text-zinc-500 block">Access Zone</span>
-              <span class="font-tech font-semibold text-zinc-300 text-xs block">
-                ALL-ZONES & SPA
-              </span>
-            </div>
-          </div>
-
-          <!-- Expiry Countdown Strip -->
-          <div id="pass-countdown-container" class="p-3.5 rounded-2xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <div id="countdown-icon" class="text-2xl">⏳</div>
-              <div>
-                <div class="text-[9px] font-tech uppercase tracking-widest text-zinc-400">Validity Horizon</div>
-                <div id="countdown-text" class="font-cyber font-extrabold text-lg sm:text-xl tracking-wider text-white">
-                  --
-                </div>
-              </div>
-            </div>
-            <div id="countdown-progress-badge" class="px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-zinc-900 border border-zinc-700 text-zinc-300">
-              --
-            </div>
-          </div>
-
-          <!-- Holographic QR & Barcode -->
-          <div class="mt-4 pt-4 border-t border-zinc-800/80 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-xl bg-zinc-950 border border-emerald-500/40 p-1 flex items-center justify-center shadow-neon-emerald">
-                <div class="grid grid-cols-4 gap-0.5 w-full h-full p-0.5">
-                  <div class="bg-emerald-400 rounded-xs"></div>
-                  <div class="bg-zinc-800 rounded-xs"></div>
-                  <div class="bg-emerald-400 rounded-xs"></div>
-                  <div class="bg-emerald-400 rounded-xs"></div>
-                  <div class="bg-zinc-800 rounded-xs"></div>
-                  <div class="bg-emerald-400 rounded-xs"></div>
-                  <div class="bg-zinc-800 rounded-xs"></div>
-                  <div class="bg-emerald-400 rounded-xs"></div>
-                  <div class="bg-emerald-400 rounded-xs"></div>
-                  <div class="bg-zinc-800 rounded-xs"></div>
-                  <div class="bg-emerald-400 rounded-xs"></div>
-                  <div class="bg-zinc-800 rounded-xs"></div>
-                </div>
-              </div>
-              <div>
-                <span class="text-[9px] font-tech text-zinc-500 uppercase tracking-widest block">SECURITY TOKEN</span>
-                <span id="pass-security-hash" class="font-mono text-[11px] text-emerald-400 tracking-widest block">
-                  BEAST//PASS-SYNC
-                </span>
-              </div>
-            </div>
-
-            <!-- Barcode Scanner -->
-            <div class="barcode-scanner w-36 h-10 bg-zinc-950 rounded-xl border border-zinc-800 p-1.5 flex items-center justify-between">
-              <div class="w-1 bg-zinc-600 h-full"></div>
-              <div class="w-2 bg-zinc-400 h-full"></div>
-              <div class="w-1 bg-zinc-600 h-full"></div>
-              <div class="w-2.5 bg-zinc-300 h-full"></div>
-              <div class="w-1 bg-zinc-500 h-full"></div>
-              <div class="w-2 bg-zinc-400 h-full"></div>
-              <div class="w-1.5 bg-zinc-700 h-full"></div>
-              <div class="w-2.5 bg-zinc-300 h-full"></div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- STREAK & 1-TAP PUNCH CARD -->
-        <div class="holo-card rounded-3xl p-5 sm:p-6 border border-zinc-800">
-          <div class="holo-sheen"></div>
-
-          <!-- Streak Header -->
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-tech uppercase tracking-wider text-zinc-400 font-bold">
-              Attendance Streak Matrix
-            </span>
-            <span id="streak-level-chip" class="px-2.5 py-0.5 rounded-full text-[11px] font-tech font-bold uppercase bg-zinc-800 text-zinc-300 border border-zinc-700">
-              --
-            </span>
-          </div>
-
-          <div class="flex items-baseline gap-3 mb-3">
-            <span class="text-3xl sm:text-4xl font-black font-cyber text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-red-500" id="streak-count-display">
-              🔥 0 Days
-            </span>
-            <span class="font-tech text-base text-zinc-300 font-bold uppercase tracking-wider">
-              Unbroken
-            </span>
-          </div>
-
-          <!-- Rank Info & Bar -->
-          <div class="p-3 rounded-2xl bg-zinc-950/80 border border-zinc-800 mb-5">
-            <div class="flex items-center justify-between text-xs mb-1.5">
-              <span class="font-tech uppercase tracking-wider text-zinc-400">Current Rank:</span>
-              <span id="member-rank-title" class="font-cyber font-bold text-amber-400">--</span>
-            </div>
-            <div class="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-800">
-              <div id="streak-progress-bar" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full rounded-full transition-all duration-700" style="width: 10%"></div>
-            </div>
-            <div class="flex justify-between items-center text-[10px] font-mono text-zinc-500 mt-1">
-              <span id="streak-current-xp">0 Days Logged</span>
-              <span id="streak-next-tier">Next Rank</span>
-            </div>
-          </div>
-
-          <!-- 1-TAP PUNCH BUTTON -->
-          <button 
-            type="button" 
-            id="punch-attendance-btn" 
-            onclick="handleSelfCheckIn()"
-            class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 text-zinc-950 font-cyber font-extrabold tracking-wider text-sm flex items-center justify-center gap-3 shadow-neon-emerald hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none"
-          >
-            <span class="text-xl">⚡</span>
-            <span id="punch-btn-text">PUNCH ATTENDANCE NOW</span>
-          </button>
-          
-          <p id="punch-status-hint" class="text-center text-[11px] font-tech text-zinc-400 mt-2">
-            Sound-synthesized instant verification synced to Supabase
-          </p>
-        </div>
-
-      </section>
-
-      <!-- ====================================================== -->
-      <!-- TAB 2: ATTENDANCE LOGS VIEW -->
-      <!-- ====================================================== -->
-      <section id="view-logs" class="app-view space-y-4">
-        
-        <!-- Logs Summary Header -->
-        <div class="holo-card rounded-3xl p-5 sm:p-6 border border-zinc-800">
-          <div class="holo-sheen"></div>
-
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-800">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-cyan-400 text-lg">📅</span>
-                <h3 class="font-cyber font-bold text-lg tracking-wider text-white">
-                  VERIFIED ATTENDANCE LOGS
-                </h3>
-              </div>
-              <p class="text-xs font-tech text-zinc-400">REAL-TIME SUPABASE TELEMETRY RECORDS</p>
-            </div>
-
-            <button 
-              type="button" 
-              onclick="fetchAttendanceLogs(true)" 
-              class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-tech font-bold uppercase tracking-wider transition-all border border-zinc-800 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-            >
-              <span id="refresh-icon">🔄</span>
-              <span>Sync Records</span>
-            </button>
-          </div>
-
-          <!-- Stats Counters -->
-          <div class="grid grid-cols-3 gap-2 sm:gap-3 my-4">
-            <div class="p-3 rounded-2xl bg-zinc-950/80 border border-zinc-800 text-center">
-              <span class="text-[10px] font-tech uppercase text-zinc-400 block">Total Punches</span>
-              <span id="logs-total-count" class="font-cyber font-bold text-lg text-emerald-400">0</span>
-            </div>
-            <div class="p-3 rounded-2xl bg-zinc-950/80 border border-zinc-800 text-center">
-              <span class="text-[10px] font-tech uppercase text-zinc-400 block">This Month</span>
-              <span id="logs-month-count" class="font-cyber font-bold text-lg text-cyan-400">0</span>
-            </div>
-            <div class="p-3 rounded-2xl bg-zinc-950/80 border border-zinc-800 text-center">
-              <span class="text-[10px] font-tech uppercase text-zinc-400 block">Last Check-In</span>
-              <span id="logs-last-date" class="font-mono font-bold text-xs text-amber-400 truncate block mt-1">None</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Attendance Logs List Container -->
-        <div class="holo-card rounded-3xl p-5 sm:p-6 border border-zinc-800">
-          <div class="holo-sheen"></div>
-
-          <h4 class="font-cyber font-bold text-xs uppercase tracking-wider text-zinc-300 mb-3 flex items-center justify-between">
-            <span>Punch History Stream</span>
-            <span class="text-[10px] font-mono text-zinc-500" id="logs-status-indicator">Fetched from cloud</span>
-          </h4>
-
-          <div id="attendance-history-container" class="space-y-2.5">
-            <!-- Injected via JavaScript -->
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ====================================================== -->
-      <!-- TAB 3: DIET & NUTRITION VIEW -->
-      <!-- ====================================================== -->
-      <section id="view-diet" class="app-view space-y-4">
-        
-        <div class="holo-card rounded-3xl p-5 sm:p-6 border border-zinc-800">
-          <div class="holo-sheen"></div>
-
-          <!-- Section Header -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-800">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-emerald-400 text-lg">🥗</span>
-                <h3 class="font-cyber font-bold text-lg tracking-wider text-white">
-                  TACTICAL NUTRITION ENGINE
-                </h3>
-              </div>
-              <p class="text-xs font-tech text-zinc-400">VEG TARGETS & WEIGHT-BASED MACRO SCALING</p>
-            </div>
-
-            <!-- Goal Tabs -->
-            <div class="flex items-center p-1 bg-zinc-950 rounded-2xl border border-zinc-800 overflow-x-auto max-w-full">
-              <button 
-                type="button" 
-                onclick="setFitnessGoal('muscle_gain')" 
-                id="tab-muscle_gain" 
-                class="goal-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider transition-all whitespace-nowrap bg-emerald-500 text-zinc-950 shadow-neon-emerald cursor-pointer"
-              >
-                🏋️ Muscle Gain
-              </button>
-              <button 
-                type="button" 
-                onclick="setFitnessGoal('fat_loss')" 
-                id="tab-fat_loss" 
-                class="goal-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider transition-all whitespace-nowrap text-zinc-400 hover:text-white cursor-pointer"
-              >
-                🔥 Fat Shred
-              </button>
-              <button 
-                type="button" 
-                onclick="setFitnessGoal('strength')" 
-                id="tab-strength" 
-                class="goal-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider transition-all whitespace-nowrap text-zinc-400 hover:text-white cursor-pointer"
-              >
-                ⚡ Strength
-              </button>
-            </div>
-          </div>
-
-          <!-- Body Weight Input & Macro Output -->
-          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 my-5">
-            
-            <!-- Weight Input (4 cols) -->
-            <div class="sm:col-span-4 p-4 rounded-2xl bg-zinc-950/80 border border-zinc-800 flex flex-col justify-between">
-              <div>
-                <span class="text-xs font-tech uppercase tracking-wider text-zinc-400 font-bold block mb-1">
-                  Body Weight (KG)
-                </span>
-                <p class="text-[11px] text-zinc-500 mb-3">Adjust to scale macro demands</p>
-
-                <div class="flex items-center gap-2">
-                  <input 
-                    type="number" 
-                    id="weight-input" 
-                    min="40" 
-                    max="180" 
-                    value="70" 
-                    oninput="updateNutritionCalculations()"
-                    class="w-24 bg-zinc-900 border border-zinc-700 focus:border-emerald-400 text-white font-mono text-xl font-bold rounded-xl px-2.5 py-1.5 text-center outline-none"
-                  />
-                  <span class="font-cyber font-bold text-zinc-400 text-base">KG</span>
-                </div>
-
-                <!-- Weight Presets -->
-                <div class="flex flex-wrap gap-1 mt-3">
-                  <button type="button" onclick="setWeightPreset(60)" class="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer">60k</button>
-                  <button type="button" onclick="setWeightPreset(70)" class="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer">70k</button>
-                  <button type="button" onclick="setWeightPreset(75)" class="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer">75k</button>
-                  <button type="button" onclick="setWeightPreset(85)" class="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer">85k</button>
-                </div>
-              </div>
-
-              <div class="mt-4 pt-3 border-t border-zinc-800/80">
-                <div class="flex items-center justify-between text-xs text-zinc-400 mb-0.5">
-                  <span>Ratio:</span>
-                  <span id="protein-ratio-label" class="font-mono text-emerald-400 font-bold">2.0g / kg</span>
-                </div>
-                <p id="goal-description-text" class="text-[10px] text-zinc-500 italic">
-                  Optimized for lean mass hypertrophy and myofibrillar repair.
-                </p>
-              </div>
-            </div>
-
-            <!-- Macro Targets Grid (8 cols) -->
-            <div class="sm:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              
-              <!-- Target 1: Protein -->
-              <div class="p-4 rounded-2xl bg-zinc-950/80 border border-emerald-500/30 flex flex-col justify-between shadow-holo">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-tech font-bold uppercase tracking-wider text-emerald-400">VEG PROTEIN</span>
-                  <span class="text-emerald-400">🥩</span>
-                </div>
-                <div class="my-2">
-                  <div id="calc-protein" class="font-cyber font-black text-2xl text-white">140g</div>
-                  <div class="text-[10px] text-zinc-400 font-tech uppercase tracking-wider">Daily Minimum</div>
-                </div>
-                <div class="text-[9px] font-mono text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/20">
-                  100% Plant & Dairy
-                </div>
-              </div>
-
-              <!-- Target 2: Calories -->
-              <div class="p-4 rounded-2xl bg-zinc-950/80 border border-cyan-500/30 flex flex-col justify-between shadow-holo">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-tech font-bold uppercase tracking-wider text-cyan-400">CALORIES</span>
-                  <span class="text-cyan-400">🔥</span>
-                </div>
-                <div class="my-2">
-                  <div id="calc-calories" class="font-cyber font-black text-2xl text-white">2,450</div>
-                  <div class="text-[10px] text-zinc-400 font-tech uppercase tracking-wider">Kcal / Day</div>
-                </div>
-                <div id="calc-cal-surplus" class="text-[9px] font-mono text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/20">
-                  +300 Lean Surplus
-                </div>
-              </div>
-
-              <!-- Target 3: Hydration -->
-              <div class="p-4 rounded-2xl bg-zinc-950/80 border border-blue-500/30 flex flex-col justify-between shadow-holo">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-tech font-bold uppercase tracking-wider text-blue-400">HYDRATION</span>
-                  <span class="text-blue-400">💧</span>
-                </div>
-                <div class="my-2">
-                  <div id="calc-water" class="font-cyber font-black text-2xl text-white">3.2 L</div>
-                  <div class="text-[10px] text-zinc-400 font-tech uppercase tracking-wider">Electrolyte Fluid</div>
-                </div>
-                <div class="text-[9px] font-mono text-blue-300 bg-blue-950/60 px-2 py-0.5 rounded border border-blue-500/20">
-                  10-12 Glasses/Day
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-          <!-- High-Yield Vegetarian Protein Weapons -->
-          <div class="p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800/80">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-tech font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                <span>🌱</span>
-                <span>Bio-Available Veg Protein Weapons (Per 100g)</span>
-              </span>
-              <span class="text-[10px] font-mono text-zinc-500">100g Benchmark</span>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              <div class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-center">
-                <div class="text-[11px] font-bold text-zinc-300">Soya Chunks</div>
-                <div class="text-emerald-400 font-mono font-bold text-sm mt-0.5">52g Pro</div>
-                <div class="text-[9px] text-zinc-500">Per 100g dry</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-center">
-                <div class="text-[11px] font-bold text-zinc-300">Low-Fat Paneer</div>
-                <div class="text-emerald-400 font-mono font-bold text-sm mt-0.5">20g Pro</div>
-                <div class="text-[9px] text-zinc-500">Per 100g</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-center">
-                <div class="text-[11px] font-bold text-zinc-300">Tofu Organic</div>
-                <div class="text-emerald-400 font-mono font-bold text-sm mt-0.5">17g Pro</div>
-                <div class="text-[9px] text-zinc-500">Per 100g</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-center">
-                <div class="text-[11px] font-bold text-zinc-300">Greek Yogurt</div>
-                <div class="text-emerald-400 font-mono font-bold text-sm mt-0.5">10g Pro</div>
-                <div class="text-[9px] text-zinc-500">Per 100g</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-center">
-                <div class="text-[11px] font-bold text-zinc-300">Whey Isolate</div>
-                <div class="text-emerald-400 font-mono font-bold text-sm mt-0.5">25g Pro</div>
-                <div class="text-[9px] text-zinc-500">Per 30g scoop</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-center">
-                <div class="text-[11px] font-bold text-zinc-300">Sprouted Moong</div>
-                <div class="text-emerald-400 font-mono font-bold text-sm mt-0.5">24g Pro</div>
-                <div class="text-[9px] text-zinc-500">Per 100g dry</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- ====================================================== -->
-      <!-- TAB 4: WORKOUT SPLIT VIEW -->
-      <!-- ====================================================== -->
-      <section id="view-workout" class="app-view space-y-4">
-        
-        <div class="holo-card rounded-3xl p-5 sm:p-6 border border-zinc-800">
-          <div class="holo-sheen"></div>
-
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-purple-400 text-lg">🏋️</span>
-                <h3 class="font-cyber font-bold text-lg tracking-wider text-white">
-                  6-DAY HYPERTROPHY PROTOCOL
-                </h3>
-              </div>
-              <p class="text-xs font-tech text-zinc-400">INTERACTIVE DRILL GUIDES, INTENSITY & REST TIMERS</p>
-            </div>
-          </div>
-
-          <!-- Day Switcher Horizontal Scroll -->
-          <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
-            <button type="button" onclick="selectWorkoutDay(1)" id="day-tab-1" class="day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-emerald-500 text-zinc-950 shadow-neon-emerald whitespace-nowrap cursor-pointer">Day 1: Chest/Tri</button>
-            <button type="button" onclick="selectWorkoutDay(2)" id="day-tab-2" class="day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 whitespace-nowrap cursor-pointer">Day 2: Back/Bi</button>
-            <button type="button" onclick="selectWorkoutDay(3)" id="day-tab-3" class="day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 whitespace-nowrap cursor-pointer">Day 3: Legs/Core</button>
-            <button type="button" onclick="selectWorkoutDay(4)" id="day-tab-4" class="day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 whitespace-nowrap cursor-pointer">Day 4: Shoulders</button>
-            <button type="button" onclick="selectWorkoutDay(5)" id="day-tab-5" class="day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 whitespace-nowrap cursor-pointer">Day 5: Arms</button>
-            <button type="button" onclick="selectWorkoutDay(6)" id="day-tab-6" class="day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 whitespace-nowrap cursor-pointer">Day 6: Athletic</button>
-            <button type="button" onclick="selectWorkoutDay(7)" id="day-tab-7" class="day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 whitespace-nowrap cursor-pointer">Day 7: Rest</button>
-          </div>
-
-          <!-- Active Day Workout Card -->
-          <div id="workout-day-card" class="p-4 sm:p-5 rounded-2xl bg-zinc-950/90 border border-zinc-800">
-            <!-- Injected via JavaScript -->
-          </div>
-        </div>
-
-      </section>
-
-    </main>
-
-    <!-- ======================================================== -->
-    <!-- NATIVE MOBILE FIXED BOTTOM NAVIGATION BAR -->
-    <!-- ======================================================== -->
-    <nav id="bottom-nav" class="fixed bottom-0 inset-x-0 bg-zinc-950/95 backdrop-blur-2xl border-t border-zinc-800/90 z-50 py-2 pb-[calc(0.6rem+env(safe-area-inset-bottom,0px))] hidden">
-      <div class="max-w-md mx-auto flex items-center justify-around px-2">
-        
-        <!-- Tab 1: Pass -->
-        <button 
-          type="button" 
-          onclick="switchTab('pass')" 
-          id="nav-btn-pass"
-          class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-emerald-400 cursor-pointer"
-        >
-          <span class="text-lg">💳</span>
-          <span class="text-[10px] font-tech font-bold uppercase tracking-wider mt-0.5">Pass</span>
-          <span class="nav-glow-indicator w-3 h-0.5 rounded-full bg-emerald-400 mt-0.5 shadow-neon-emerald"></span>
-        </button>
-
-        <!-- Tab 2: Logs -->
-        <button 
-          type="button" 
-          onclick="switchTab('logs')" 
-          id="nav-btn-logs"
-          class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-zinc-500 hover:text-zinc-300 cursor-pointer"
-        >
-          <span class="text-lg">📅</span>
-          <span class="text-[10px] font-tech font-bold uppercase tracking-wider mt-0.5">Logs</span>
-          <span class="nav-glow-indicator w-3 h-0.5 rounded-full bg-transparent mt-0.5"></span>
-        </button>
-
-        <!-- Tab 3: Diet -->
-        <button 
-          type="button" 
-          onclick="switchTab('diet')" 
-          id="nav-btn-diet"
-          class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-zinc-500 hover:text-zinc-300 cursor-pointer"
-        >
-          <span class="text-lg">🥗</span>
-          <span class="text-[10px] font-tech font-bold uppercase tracking-wider mt-0.5">Diet</span>
-          <span class="nav-glow-indicator w-3 h-0.5 rounded-full bg-transparent mt-0.5"></span>
-        </button>
-
-        <!-- Tab 4: Workout -->
-        <button 
-          type="button" 
-          onclick="switchTab('workout')" 
-          id="nav-btn-workout"
-          class="nav-tab-btn flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-zinc-500 hover:text-zinc-300 cursor-pointer"
-        >
-          <span class="text-lg">🏋️</span>
-          <span class="text-[10px] font-tech font-bold uppercase tracking-wider mt-0.5">Workout</span>
-          <span class="nav-glow-indicator w-3 h-0.5 rounded-full bg-transparent mt-0.5"></span>
-        </button>
-
-      </div>
-    </nav>
-
+    </section>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- SINGLE SCRIPT WITH SUPABASE CLIENT & FULL BUSINESS LOGIC -->
-  <!-- ======================================================== -->
+  <!-- FIXED BOTTOM NAV (4 TABS) -->
+  <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 w-11/12 max-w-md bg-card/95 backdrop-blur-xl border border-white/10 rounded-3xl p-1.5 shadow-2xl flex justify-between z-30">
+    <button onclick="switchTab('pass')" id="nav-pass" class="nav-btn flex-1 py-2 rounded-2xl flex flex-col items-center text-[11px] font-bold text-accent bg-white/5"><span>💳</span><span>PASS</span></button>
+    <button onclick="switchTab('activity')" id="nav-activity" class="nav-btn flex-1 py-2 rounded-2xl flex flex-col items-center text-[11px] font-bold text-zinc-400"><span>📊</span><span>ACTIVITY</span></button>
+    <button onclick="switchTab('nutrition')" id="nav-nutrition" class="nav-btn flex-1 py-2 rounded-2xl flex flex-col items-center text-[11px] font-bold text-zinc-400"><span>🥗</span><span>MACROS</span></button>
+    <button onclick="switchTab('workouts')" id="nav-workouts" class="nav-btn flex-1 py-2 rounded-2xl flex flex-col items-center text-[11px] font-bold text-zinc-400"><span>🏋️</span><span>WORKOUTS</span></button>
+  </nav>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
-    // ==========================================
-    // 1. EXACT SUPABASE INITIALIZATION
-    // ==========================================
-    const SUPABASE_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
+    const CONFIG = { name: "RETRO GYM", upi: "retrogym@upi", phone: "918467895365", fee: 1200 };
+    const SB_URL = "https://zfvkvrhuovvbfbrutpph.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmdmt2cmh1b3Z2YmZicnV0cHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzIyODQsImV4cCI6MjEwMjcwODI4NH0.M-WK1bgZDLXcuMTldMSwptx5XRpRnLAi-BxMFEoph4U";
 
-    let supabaseClient = null;
-    try {
-      if (window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log("Supabase client initialized.");
-      }
-    } catch (e) {
-      console.warn("Supabase init exception:", e);
+    let sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+    let member = null, isPunched = false, timer = 60, timerId = null;
+
+    const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+    function playBeep(freq = 600, duration = 0.2) {
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + duration);
     }
 
-    // Global Active State - STRICTLY ZERO HARDCODED DEFAULT MEMBERS
-    let currentMember = null;
-    let activeTab = 'pass';
-    let currentGoal = 'muscle_gain';
-    let currentWorkoutDay = 1;
-    let audioCtx = null;
-    let loadedLogs = [];
-
-    // ==========================================
-    // 2. TAB SWITCHER (NATIVE BOTTOM NAVIGATION)
-    // ==========================================
-    function switchTab(tabName) {
-      activeTab = tabName;
-
-      // Hide all views
-      document.querySelectorAll('.app-view').forEach(view => {
-        view.classList.remove('active-view');
-      });
-
-      // Show targeted view
-      const targetView = document.getElementById(`view-${tabName}`);
-      if (targetView) {
-        targetView.classList.add('active-view');
-      }
-
-      // Update Bottom Nav Buttons
-      const tabKeys = ['pass', 'logs', 'diet', 'workout'];
-      tabKeys.forEach(t => {
-        const btnEl = document.getElementById(`nav-btn-${t}`);
-        if (btnEl) {
-          const indicator = btnEl.querySelector('.nav-glow-indicator');
-          if (t === tabName) {
-            btnEl.className = "nav-tab-btn flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-emerald-400 cursor-pointer";
-            if (indicator) {
-              indicator.className = "nav-glow-indicator w-3 h-0.5 rounded-full bg-emerald-400 mt-0.5 shadow-neon-emerald";
-            }
-          } else {
-            btnEl.className = "nav-tab-btn flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all text-zinc-500 hover:text-zinc-300 cursor-pointer";
-            if (indicator) {
-              indicator.className = "nav-glow-indicator w-3 h-0.5 rounded-full bg-transparent mt-0.5";
-            }
-          }
-        }
-      });
-
-      if (tabName === 'logs' && currentMember) {
-        fetchAttendanceLogs(false);
-      }
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.classList.remove('opacity-0');
+      setTimeout(() => t.classList.add('opacity-0'), 2500);
     }
 
-    // ==========================================
-    // 3. WEB AUDIO API SYNTHESIZER (Cyber Chime)
-    // ==========================================
-    function playCyberConfirmationChime() {
+    // AUTH FLOW
+    async function handlePhoneVerify() {
+      const phone = document.getElementById('auth-phone').value.trim();
+      if (!phone) return showToast("Enter phone number");
       try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!audioCtx) {
-          audioCtx = new AudioContextClass();
-        }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-
-        const now = audioCtx.currentTime;
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 arpeggio
-
-        notes.forEach((freq, index) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          const filter = audioCtx.createBiquadFilter();
-
-          osc.type = index % 2 === 0 ? 'sine' : 'triangle';
-          osc.frequency.setValueAtTime(freq, now + index * 0.075);
-
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(2600, now);
-          filter.frequency.exponentialRampToValueAtTime(800, now + index * 0.075 + 0.35);
-
-          gain.gain.setValueAtTime(0.001, now + index * 0.075);
-          gain.gain.exponentialRampToValueAtTime(0.2, now + index * 0.075 + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.075 + 0.45);
-
-          osc.connect(filter);
-          filter.connect(gain);
-          gain.connect(audioCtx.destination);
-
-          osc.start(now + index * 0.075);
-          osc.stop(now + index * 0.075 + 0.5);
-        });
-
-        // Tactile bass punch
-        const subOsc = audioCtx.createOscillator();
-        const subGain = audioCtx.createGain();
-        subOsc.type = 'sine';
-        subOsc.frequency.setValueAtTime(130, now);
-        subOsc.frequency.exponentialRampToValueAtTime(45, now + 0.3);
-
-        subGain.gain.setValueAtTime(0.25, now);
-        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-        subOsc.connect(subGain);
-        subGain.connect(audioCtx.destination);
-
-        subOsc.start(now);
-        subOsc.stop(now + 0.36);
-
-      } catch (err) {
-        console.warn("Web Audio exception:", err);
-      }
+        const { data, error } = await sb.from('members').select('*').eq('phone', phone).single();
+        if (error || !data) return showToast("Member not found in database");
+        member = data;
+        document.getElementById('auth-user-name').innerText = member.full_name || member.name || 'Member';
+        document.getElementById('auth-step-phone').classList.add('hidden');
+        document.getElementById('auth-step-pin').classList.remove('hidden');
+        document.getElementById('auth-pin-label').innerText = member.password ? "Enter 4-Digit PIN" : "Set New 4-Digit Passkey";
+        document.getElementById('auth-pin-input').focus();
+      } catch (e) { showToast("Network error checking member"); }
     }
 
-    // ==========================================
-    // 4. NOTIFICATION TOAST SYSTEM
-    // ==========================================
-    function showToast(title, message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-
-      const toast = document.createElement('div');
-      const isSuccess = type === 'success';
-      const isError = type === 'error';
-
-      const borderClass = isSuccess 
-        ? 'border-emerald-500/80 bg-zinc-950/95 text-emerald-400 shadow-neon-emerald' 
-        : isError 
-        ? 'border-red-500/80 bg-zinc-950/95 text-red-400 shadow-neon-crimson'
-        : 'border-cyan-500/80 bg-zinc-950/95 text-cyan-400 shadow-neon-cyan';
-
-      toast.className = `p-3.5 rounded-2xl border backdrop-blur-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-start gap-3 ${borderClass}`;
-      toast.innerHTML = `
-        <span class="text-xl mt-0.5">${isSuccess ? '⚡' : isError ? '🛑' : 'ℹ️'}</span>
-        <div class="flex-1">
-          <div class="font-cyber font-bold text-xs tracking-wider uppercase text-white">${title}</div>
-          <div class="text-xs font-tech text-zinc-300 mt-0.5">${message}</div>
-        </div>
-      `;
-
-      container.appendChild(toast);
-      requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      });
-
-      setTimeout(() => {
-        toast.classList.add('opacity-0', '-translate-y-2');
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
+    async function handlePinSubmit() {
+      const pin = document.getElementById('auth-pin-input').value.trim();
+      if (pin.length !== 4) return showToast("Enter 4-digit PIN");
+      if (!member.password) {
+        await sb.from('members').update({ password: pin }).eq('phone', member.phone);
+        member.password = pin;
+      } else if (String(member.password) !== pin) {
+        return showToast("Incorrect Passkey PIN");
+      }
+      localStorage.setItem('rg_member', JSON.stringify(member));
+      loginSuccess();
     }
 
-    // ==========================================
-    // 5. PHONE SEARCH & AUTH (STRICTLY SUPABASE)
-    // ==========================================
-    async function searchMemberByPhone(rawPhone) {
-      const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
-      if (cleanPhone.length !== 10) {
-        showToast("Invalid Mobile", "Please enter a valid 10-digit mobile number.", "error");
-        return null;
-      }
-
-      const searchBtn = document.getElementById('search-btn');
-      if (searchBtn) {
-        searchBtn.disabled = true;
-        searchBtn.innerHTML = `<span>QUERYING DATABASE...</span><span class="animate-spin">⟳</span>`;
-      }
-
-      let memberData = null;
-
-      if (supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient
-            .from('members')
-            .select('*')
-            .or(`phone.eq.${cleanPhone},phone.eq.+91${cleanPhone}`)
-            .maybeSingle();
-
-          if (!error && data) {
-            memberData = data;
-          } else if (error) {
-            console.error("Supabase query error:", error.message);
-          }
-        } catch (e) {
-          console.error("Supabase connection exception:", e);
-        }
-      }
-
-      if (searchBtn) {
-        searchBtn.disabled = false;
-        searchBtn.innerHTML = `<span>INITIALIZE MEMBER HUD</span><span class="text-lg">→</span>`;
-      }
-
-      return memberData;
+    function resetAuthStep() {
+      document.getElementById('auth-step-pin').classList.add('hidden');
+      document.getElementById('auth-step-phone').classList.remove('hidden');
+      document.getElementById('auth-pin-input').value = '';
     }
 
-    async function handlePhoneSearch(event) {
-      if (event) event.preventDefault();
-      const phoneInput = document.getElementById('phone-input');
-      if (!phoneInput) return;
-
-      const phoneVal = phoneInput.value.trim();
-      const member = await searchMemberByPhone(phoneVal);
-
-      if (member) {
-        currentMember = member;
-        localStorage.setItem('beast_gym_last_phone', member.phone);
-        showToast("Member Verified", `Welcome, ${member.full_name || 'Member'}!`, "success");
-        renderMemberPortal();
-      } else {
-        showToast("No Member Found", "No registered membership profile found with this mobile number.", "error");
-      }
+    function loginSuccess() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      renderMemberUI();
+      fetchAttendance();
+      updateCrowdMeter();
+      updateNutrition(72);
+      renderWorkout(1);
     }
 
     function handleLogout() {
-      localStorage.removeItem('beast_gym_last_phone');
-      currentMember = null;
-      document.getElementById('portal-view').classList.add('hidden');
-      document.getElementById('bottom-nav').classList.add('hidden');
-      document.getElementById('header-switch-btn').classList.add('hidden');
-      document.getElementById('search-view').classList.remove('hidden');
+      localStorage.removeItem('rg_member');
+      location.reload();
+    }
+
+    // UI RENDERING
+    function renderMemberUI() {
+      const name = member.full_name || member.name || 'Member';
+      const initials = name.substring(0, 2).toUpperCase();
+      document.getElementById('header-avatar').innerText = initials;
+      document.getElementById('drawer-avatar').innerText = initials;
+      document.getElementById('drawer-name').innerText = name;
+      document.getElementById('drawer-phone').innerText = member.phone;
+      document.getElementById('pass-name').innerText = name;
+      document.getElementById('pass-phone').innerText = member.phone;
+      document.getElementById('pass-streak').innerText = member.streak_count || 0;
+      document.getElementById('pass-barcode').innerText = `RT-${member.phone}`;
+
+      const expiry = member.valid_until ? new Date(member.valid_until) : new Date(Date.now() + 28 * 86400000);
+      const days = Math.max(0, Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)));
+      document.getElementById('pass-days-left').innerText = days;
+      document.getElementById('pass-expiry').innerText = expiry.toLocaleDateString('en-GB');
+
+      // Update UPI link
+      const upiUrl = `upi://pay?pa=${CONFIG.upi}&pn=${encodeURIComponent(CONFIG.name)}&am=${CONFIG.fee}&cu=INR&tn=${encodeURIComponent(name + ' ' + member.phone)}`;
+      document.getElementById('upi-intent-link').href = upiUrl;
+      document.getElementById('upi-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(upiUrl)}`;
+    }
+
+    // ATTENDANCE
+    async function fetchAttendance() {
+      const list = document.getElementById('activity-list');
+      list.innerHTML = `<p class="text-xs font-mono text-zinc-500 py-4 text-center">Loading punch records...</p>`;
+      const { data } = await sb.from('attendance_logs').select('*').eq('phone', member.phone).order('checkin_time', { ascending: false });
+      const logs = data || [];
+      const today = new Date().toISOString().split('T')[0];
+      isPunched = logs.some(l => l.checkin_time && l.checkin_time.startsWith(today));
       
-      const phoneInput = document.getElementById('phone-input');
-      if (phoneInput) phoneInput.value = '';
-      showToast("Session Ended", "Switched back to terminal screen.", "info");
+      const btn = document.getElementById('btn-punch');
+      if (isPunched) {
+        btn.classList.add('bg-zinc-800', 'text-emerald-400');
+        btn.classList.remove('bg-gradient-to-r', 'from-accent', 'to-lime');
+        document.getElementById('btn-punch-text').innerText = "✓ ATTENDANCE LOGGED TODAY";
+        document.getElementById('punch-status').innerText = "Logged Today";
+      }
+
+      list.innerHTML = logs.length ? logs.map(l => `
+        <div class="bg-card p-3 rounded-2xl border border-white/5 flex justify-between items-center text-xs font-mono">
+          <div><p class="text-white font-bold">${new Date(l.checkin_time).toLocaleDateString('en-GB')}</p><p class="text-[10px] text-zinc-400">${new Date(l.checkin_time).toLocaleTimeString()}</p></div>
+          <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">VERIFIED</span>
+        </div>`).join('') : `<p class="text-xs font-mono text-zinc-500 py-6 text-center">No attendance logs yet.</p>`;
     }
 
-    // ==========================================
-    // 6. RENDER MEMBER PORTAL
-    // ==========================================
-    function renderMemberPortal() {
-      if (!currentMember) return;
-
-      document.getElementById('search-view').classList.add('hidden');
-      document.getElementById('portal-view').classList.remove('hidden');
-      document.getElementById('bottom-nav').classList.remove('hidden');
-      document.getElementById('header-switch-btn').classList.remove('hidden');
-
-      // Top Mini Bar
-      const fullName = currentMember.full_name || 'Beast Member';
-      const initials = fullName
-        .split(' ')
-        .filter(n => n.length > 0)
-        .map(n => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase() || 'BG';
-
-      document.getElementById('avatar-initials').innerText = initials;
-      document.getElementById('member-name-bar').innerText = fullName;
-      document.getElementById('member-phone-bar').innerText = `+91 ${currentMember.phone || '--'}`;
-
-      // Holographic Pass Details
-      document.getElementById('pass-member-name').innerText = fullName;
-      document.getElementById('pass-phone').innerText = `+91 ${currentMember.phone || '--'}`;
-      document.getElementById('pass-plan-name').innerText = currentMember.plan_name || 'STANDARD PASS';
-      document.getElementById('pass-expiry-date').innerText = currentMember.expiry_date || 'No Expiry Set';
-      document.getElementById('pass-member-id').innerText = currentMember.id ? `#${currentMember.id}` : '#BST-NEW';
-
-      // Expiry Countdown & Glowing Border
-      const passCard = document.getElementById('pass-card');
-      const statusBadge = document.getElementById('pass-status-badge');
-      const countdownText = document.getElementById('countdown-text');
-      const countdownIcon = document.getElementById('countdown-icon');
-      const countdownProgress = document.getElementById('countdown-progress-badge');
-
-      if (currentMember.expiry_date) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const expDate = new Date(currentMember.expiry_date);
-        expDate.setHours(0, 0, 0, 0);
-
-        const diffTime = expDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays >= 0) {
-          passCard.classList.remove('border-red-500/60', 'shadow-neon-crimson');
-          passCard.classList.add('border-emerald-500/60', 'shadow-neon-emerald');
-
-          statusBadge.className = "px-3 py-1 rounded-xl font-cyber text-xs font-bold tracking-wider flex items-center gap-1.5 border border-emerald-400/50 bg-emerald-950/80 text-emerald-300 shadow-neon-emerald";
-          statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span><span>ACTIVE BEAST</span>`;
-
-          countdownIcon.innerText = "⚡";
-          countdownText.innerHTML = `<span class="text-emerald-400">${diffDays}</span> <span class="text-xs font-tech text-zinc-300 font-bold uppercase">DAYS REMAINING</span>`;
-          countdownProgress.className = "px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-950 border border-emerald-500/30 text-emerald-300";
-          countdownProgress.innerText = `RENEWS: ${currentMember.expiry_date}`;
-        } else {
-          const daysPast = Math.abs(diffDays);
-          passCard.classList.remove('border-emerald-500/60', 'shadow-neon-emerald');
-          passCard.classList.add('border-red-500/60', 'shadow-neon-crimson');
-
-          statusBadge.className = "px-3 py-1 rounded-xl font-cyber text-xs font-bold tracking-wider flex items-center gap-1.5 border border-red-500/60 bg-red-950/80 text-red-300 shadow-neon-crimson";
-          statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span>PLAN EXPIRED</span>`;
-
-          countdownIcon.innerText = "🛑";
-          countdownText.innerHTML = `<span class="text-red-400">EXPIRED</span> <span class="text-xs font-tech text-zinc-300 font-bold uppercase">${daysPast}D AGO</span>`;
-          countdownProgress.className = "px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-red-950 border border-red-500/40 text-red-300";
-          countdownProgress.innerText = `RENEW AT RECEPTION`;
-        }
-      } else {
-        // No expiry specified
-        passCard.classList.add('border-emerald-500/60', 'shadow-neon-emerald');
-        statusBadge.className = "px-3 py-1 rounded-xl font-cyber text-xs font-bold tracking-wider flex items-center gap-1.5 border border-emerald-400/50 bg-emerald-950/80 text-emerald-300";
-        statusBadge.innerHTML = `<span>LIFETIME PASS</span>`;
-        countdownText.innerHTML = `<span class="text-emerald-400">UNLIMITED</span>`;
-        countdownProgress.innerText = "ACTIVE";
-      }
-
-      // Streaks & Punch State
-      updateStreakDisplay();
-      checkPunchState();
-
-      // Diet & Workout
-      if (currentMember.weight_kg) {
-        document.getElementById('weight-input').value = currentMember.weight_kg;
-      }
-      updateNutritionCalculations();
-      renderWorkoutSplit();
-
-      // Fetch live real logs from Supabase
-      fetchAttendanceLogs(false);
-
-      // Default to Pass view
-      switchTab('pass');
+    async function logAttendance() {
+      if (isPunched) return showToast("Already logged for today!");
+      const record = { phone: member.phone, member_name: member.full_name || member.name || 'Member', checkin_time: new Date().toISOString() };
+      isPunched = true;
+      member.streak_count = (member.streak_count || 0) + 1;
+      document.getElementById('pass-streak').innerText = member.streak_count;
+      playBeep(880, 0.3);
+      showToast(`Check-in complete! Streak: ${member.streak_count} 🔥`);
+      renderMemberUI();
+      await sb.from('attendance_logs').insert([record]);
+      await sb.from('members').update({ streak_count: member.streak_count }).eq('phone', member.phone);
+      fetchAttendance();
     }
 
-    // ==========================================
-    // 7. STREAKS & RANKS (PURE DATA DRIVEN)
-    // ==========================================
-    function getRankInfo(streak) {
-      if (streak >= 30) {
-        return { name: "ALPHA BEAST (LV. MAX)", level: "LV. 5 ALPHA", next: "IMMORTAL", progress: 100 };
-      } else if (streak >= 15) {
-        return { name: "TITAN BEAST", level: "LV. 4 TITAN", next: "Alpha (30D)", progress: ((streak - 15) / 15) * 100 };
-      } else if (streak >= 8) {
-        return { name: "CYBER BERSERKER", level: "LV. 3 BERSERK", next: "Titan (15D)", progress: ((streak - 8) / 7) * 100 };
-      } else if (streak >= 4) {
-        return { name: "IRON WARRIOR", level: "LV. 2 WARRIOR", next: "Berserker (8D)", progress: ((streak - 4) / 4) * 100 };
-      } else if (streak >= 1) {
-        return { name: "ROOKIE BEAST", level: "LV. 1 ROOKIE", next: "Warrior (4D)", progress: (streak / 4) * 100 };
-      } else {
-        return { name: "INITIATE", level: "LV. 0 INITIATE", next: "Rookie (1D)", progress: 0 };
-      }
-    }
-
-    function updateStreakDisplay() {
-      const streak = parseInt(currentMember.streak_count, 10) || 0;
-      const rank = getRankInfo(streak);
-
-      document.getElementById('streak-count-display').innerText = `🔥 ${streak} ${streak === 1 ? 'Day' : 'Days'}`;
-      document.getElementById('header-streak-pill').innerText = `🔥 ${streak}D`;
-      document.getElementById('member-rank-title').innerText = rank.name;
-      document.getElementById('member-rank-badge-bar').innerText = rank.name;
-      document.getElementById('streak-level-chip').innerText = rank.level;
-      document.getElementById('streak-current-xp').innerText = `${streak} ${streak === 1 ? 'Day' : 'Days'} Logged`;
-      document.getElementById('streak-next-tier').innerText = `Next: ${rank.next}`;
-      document.getElementById('streak-progress-bar').style.width = `${Math.min(100, Math.max(5, rank.progress))}%`;
-    }
-
-    // ==========================================
-    // 8. PUNCH ATTENDANCE (Live Supabase Flow)
-    // ==========================================
-    function checkPunchState() {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const punchBtn = document.getElementById('punch-attendance-btn');
-      const punchBtnText = document.getElementById('punch-btn-text');
-      const punchStatusHint = document.getElementById('punch-status-hint');
-
-      const isCheckedInToday = currentMember.last_checkin === todayStr;
-
-      if (isCheckedInToday) {
-        punchBtn.disabled = true;
-        punchBtn.classList.remove('bg-gradient-to-r', 'from-emerald-500', 'via-teal-400', 'to-emerald-600', 'shadow-neon-emerald');
-        punchBtn.classList.add('bg-zinc-800', 'text-zinc-400');
-        punchBtnText.innerText = "✅ ATTENDANCE LOGGED TODAY";
-        punchStatusHint.innerText = "Great workout! Next check-in opens tomorrow morning.";
-      } else {
-        punchBtn.disabled = false;
-        punchBtn.classList.remove('bg-zinc-800', 'text-zinc-400');
-        punchBtn.classList.add('bg-gradient-to-r', 'from-emerald-500', 'via-teal-400', 'to-emerald-600', 'shadow-neon-emerald');
-        punchBtnText.innerText = "PUNCH ATTENDANCE NOW";
-        punchStatusHint.innerText = "Sound-synthesized instant verification synced to Supabase";
-      }
-    }
-
-    async function handleSelfCheckIn() {
-      if (!currentMember) return;
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (currentMember.last_checkin === todayStr) {
-        showToast("Already Checked In", "You have already punched attendance for today.", "info");
-        return;
-      }
-
-      // 1. Play Synthesized Chime
-      playCyberConfirmationChime();
-
-      // 2. Local State increment
-      currentMember.streak_count = (parseInt(currentMember.streak_count, 10) || 0) + 1;
-      currentMember.last_checkin = todayStr;
-
-      // 3. Supabase Real-Time Insert & Update
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('attendance_logs').insert([
-            {
-              member_id: currentMember.id,
-              phone: currentMember.phone,
-              checkin_time: new Date().toISOString(),
-            }
-          ]);
-
-          await supabaseClient
-            .from('members')
-            .update({
-              streak_count: currentMember.streak_count,
-              last_checkin: todayStr,
-            })
-            .eq('phone', currentMember.phone);
-
-          console.log("Attendance record pushed to Supabase.");
-        } catch (e) {
-          console.error("Supabase checkin error:", e);
-        }
-      }
-
-      // 4. Update UI
-      updateStreakDisplay();
-      checkPunchState();
-      fetchAttendanceLogs(false);
-
-      showToast(
-        "⚡ ATTENDANCE VERIFIED", 
-        `Streak elevated to ${currentMember.streak_count} Days! Record saved to cloud.`, 
-        "success"
-      );
-    }
-
-    // ==========================================
-    // 9. LIVE ATTENDANCE LOGS (REAL SUPABASE QUERY)
-    // ==========================================
-    async function fetchAttendanceLogs(isManualRefresh = false) {
-      if (!currentMember) return;
-
-      const container = document.getElementById('attendance-history-container');
-      const refreshIcon = document.getElementById('refresh-icon');
-      const statusIndicator = document.getElementById('logs-status-indicator');
-
-      if (refreshIcon) refreshIcon.classList.add('animate-spin');
-      if (statusIndicator) statusIndicator.innerText = "Syncing with Supabase...";
-
-      let logs = [];
-
-      if (supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient
-            .from('attendance_logs')
-            .select('*')
-            .eq('phone', currentMember.phone)
-            .order('checkin_time', { ascending: false });
-
-          if (!error && data) {
-            logs = data;
-          } else if (error) {
-            console.error("Error querying attendance_logs:", error.message);
-          }
-        } catch (err) {
-          console.error("Attendance log fetch error:", err);
-        }
-      }
-
-      loadedLogs = logs;
-      renderAttendanceLogs(logs);
-
-      if (refreshIcon) refreshIcon.classList.remove('animate-spin');
-      if (statusIndicator) statusIndicator.innerText = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-      if (isManualRefresh) {
-        showToast("Records Synced", `Loaded ${logs.length} cloud attendance records.`, "info");
-      }
-    }
-
-    function renderAttendanceLogs(logs) {
-      const container = document.getElementById('attendance-history-container');
-      if (!container) return;
-
-      const totalCountEl = document.getElementById('logs-total-count');
-      const monthCountEl = document.getElementById('logs-month-count');
-      const lastDateEl = document.getElementById('logs-last-date');
-
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      const thisMonthLogs = logs.filter(log => {
-        const d = new Date(log.checkin_time);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    // TABS, DRAWER & MODALS
+    function switchTab(t) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${t}`).classList.remove('hidden');
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-accent', 'bg-white/5');
+        btn.classList.add('text-zinc-400');
       });
+      document.getElementById(`nav-${t}`).classList.add('text-accent', 'bg-white/5');
+    }
 
-      if (totalCountEl) totalCountEl.innerText = logs.length;
-      if (monthCountEl) monthCountEl.innerText = thisMonthLogs.length;
+    function toggleDrawer(open) {
+      document.getElementById('drawer-backdrop').classList.toggle('opacity-0', !open);
+      document.getElementById('drawer-backdrop').classList.toggle('pointer-events-none', !open);
+      document.getElementById('drawer-panel').classList.toggle('-translate-x-full', !open);
+      document.getElementById('drawer').classList.toggle('pointer-events-none', !open);
+    }
 
-      if (logs.length > 0) {
-        const latestDate = new Date(logs[0].checkin_time);
-        if (lastDateEl) {
-          lastDateEl.innerText = latestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
+    function openUpiModal() { document.getElementById('upi-modal').classList.remove('hidden'); }
+    function closeUpiModal() { document.getElementById('upi-modal').classList.add('hidden'); }
+    function confirmUpiWhatsApp() {
+      const msg = `Hi Retro Gym Reception, I have initiated my ₹1,200 renewal payment via UPI for ${member.full_name || 'Member'} (${member.phone}). Please confirm.`;
+      window.open(`https://wa.me/${CONFIG.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
 
-        container.innerHTML = logs.map((item, index) => {
-          const logDate = new Date(item.checkin_time);
-          const dateStr = logDate.toLocaleDateString('en-US', { 
-            weekday: 'short',
-            month: 'short', 
-            day: 'numeric',
-            year: 'numeric'
-          });
-          const timeStr = logDate.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit'
-          });
+    function updateCrowdMeter() {
+      const h = new Date().getHours();
+      const isPeak = (h >= 17 && h <= 21);
+      document.getElementById('crowd-badge').innerText = isPeak ? "Peak Rush (85%)" : "Low / Moderate";
+      document.getElementById('crowd-badge').className = isPeak ? "text-red-400 font-bold" : "text-emerald-400 font-bold";
+      document.getElementById('crowd-bar').style.width = isPeak ? "85%" : "40%";
+    }
 
-          const isRecent = index === 0;
+    function saveBodyStats() {
+      const w = document.getElementById('drawer-weight').value;
+      if (w) updateNutrition(w);
+      showToast("Body stats saved locally!");
+    }
 
-          return `
-            <div class="p-3.5 rounded-2xl bg-zinc-950/80 border ${isRecent ? 'border-emerald-500/40 shadow-neon-emerald' : 'border-zinc-800'} flex items-center justify-between gap-3 transition-all hover:border-zinc-700">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-xl ${isRecent ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-900 text-zinc-400 border border-zinc-800'} flex items-center justify-center font-cyber text-xs font-bold">
-                  ⚡
-                </div>
-                <div>
-                  <div class="font-mono text-xs font-bold text-white">${dateStr}</div>
-                  <div class="text-[11px] font-tech text-zinc-400 mt-0.5 flex items-center gap-1.5">
-                    <span>${timeStr}</span>
-                    <span>•</span>
-                    <span class="text-emerald-400 font-mono text-[10px]">Gate Verified</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <span class="px-2.5 py-1 rounded-lg text-[10px] font-tech font-bold uppercase ${isRecent ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-zinc-900 text-zinc-400 border border-zinc-800'}">
-                  ${isRecent ? 'LATEST PUNCH' : 'VERIFIED'}
-                </span>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-      } else {
-        // Authenticated Clean Empty State
-        if (lastDateEl) lastDateEl.innerText = 'None';
-        container.innerHTML = `
-          <div class="p-8 text-center rounded-2xl bg-zinc-950/50 border border-zinc-800/80">
-            <div class="text-3xl mb-2">⚡</div>
-            <h5 class="font-cyber font-bold text-sm text-zinc-300">NO PUNCH RECORDS DETECTED</h5>
-            <p class="text-xs font-tech text-zinc-500 mt-1 max-w-xs mx-auto">
-              No check-ins yet. Tap 'Punch Attendance' in the Pass tab to start your streak!
-            </p>
-            <button 
-              type="button" 
-              onclick="switchTab('pass')" 
-              class="mt-4 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-tech font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all cursor-pointer"
-            >
-              Go to Pass & Punch
-            </button>
-          </div>
-        `;
+    async function promptChangePin() {
+      const p = prompt("Enter new 4-digit PIN:");
+      if (p && p.length === 4) {
+        await sb.from('members').update({ password: p }).eq('phone', member.phone);
+        member.password = p;
+        showToast("Passkey PIN updated!");
       }
     }
 
-    // ==========================================
-    // 10. DIET & NUTRITION ENGINE
-    // ==========================================
-    function setFitnessGoal(goal) {
-      currentGoal = goal;
-      document.querySelectorAll('.goal-tab').forEach(tab => {
-        tab.className = 'goal-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider transition-all whitespace-nowrap text-zinc-400 hover:text-white cursor-pointer';
-      });
-
-      const activeTabEl = document.getElementById(`tab-${goal}`);
-      if (activeTabEl) {
-        activeTabEl.className = 'goal-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider transition-all whitespace-nowrap bg-emerald-500 text-zinc-950 shadow-neon-emerald cursor-pointer';
-      }
-
-      updateNutritionCalculations();
+    // NUTRITION & WORKOUTS
+    function updateNutrition(w) {
+      const weight = parseFloat(w) || 72;
+      document.getElementById('nutri-weight-label').innerText = weight;
+      document.getElementById('nutri-protein').innerText = Math.round(weight * 2.0) + 'g';
+      document.getElementById('nutri-calories').innerText = Math.round(weight * 34) + ' kcal';
+      document.getElementById('nutri-water').innerText = (weight * 0.05).toFixed(1) + 'L';
     }
 
-    function setWeightPreset(kg) {
-      const input = document.getElementById('weight-input');
-      if (input) {
-        input.value = kg;
-        updateNutritionCalculations();
-      }
-    }
-
-    function updateNutritionCalculations() {
-      const weightInput = document.getElementById('weight-input');
-      const weight = parseFloat(weightInput ? weightInput.value : 70) || 70;
-
-      let proteinRatio = 2.0;
-      let calMultiplier = 35;
-      let surplusText = "+300 Lean Surplus";
-      let goalDesc = "Optimized for lean mass hypertrophy and myofibrillar repair.";
-
-      if (currentGoal === 'fat_loss') {
-        proteinRatio = 2.2;
-        calMultiplier = 28;
-        surplusText = "-400 Shred Deficit";
-        goalDesc = "High-protein deficit: incinerate adipose while preserving muscle mass.";
-      } else if (currentGoal === 'strength') {
-        proteinRatio = 1.8;
-        calMultiplier = 38;
-        surplusText = "+500 Power Surplus";
-        goalDesc = "Power-focused macro profile: dense glycogen stores for maximal CNS output.";
-      }
-
-      const totalProtein = Math.round(weight * proteinRatio);
-      const totalCalories = Math.round(weight * calMultiplier);
-      const totalWater = (weight * 0.045).toFixed(1);
-
-      const pRatioLabel = document.getElementById('protein-ratio-label');
-      const goalDescEl = document.getElementById('goal-description-text');
-      const cProtein = document.getElementById('calc-protein');
-      const cCal = document.getElementById('calc-calories');
-      const cSurplus = document.getElementById('calc-cal-surplus');
-      const cWater = document.getElementById('calc-water');
-
-      if (pRatioLabel) pRatioLabel.innerText = `${proteinRatio.toFixed(1)}g / kg`;
-      if (goalDescEl) goalDescEl.innerText = goalDesc;
-      if (cProtein) cProtein.innerText = `${totalProtein}g`;
-      if (cCal) cCal.innerText = `${totalCalories.toLocaleString()}`;
-      if (cSurplus) cSurplus.innerText = surplusText;
-      if (cWater) cWater.innerText = `${totalWater} L`;
-    }
-
-    // ==========================================
-    // 11. WORKOUT SPLIT GENERATOR
-    // ==========================================
-    const WORKOUT_SPLIT_DATA = {
-      1: {
-        title: "DAY 1: 💥 CHEST & TRICEPS HYPERTROPHY",
-        focus: "Pectoralis Major/Minor, Anterior Delts & Triceps",
-        duration: "65 Mins",
-        intensity: "HIGH INTENSITY (RPE 8.5)",
-        exercises: [
-          { name: "Incline Dumbbell Press", sets: "4 Sets", reps: "8-12 Reps", rest: "90s", cue: "30° bench incline, deep chest stretch, 2-sec eccentric" },
-          { name: "Flat Barbell Bench Press", sets: "4 Sets", reps: "6-8 Reps", rest: "120s", cue: "Retract scapulae, explosive concentric drive" },
-          { name: "Low-to-High Cable Flyes", sets: "3 Sets", reps: "12-15 Reps", rest: "60s", cue: "Peak contraction squeeze for upper chest fibers" },
-          { name: "Weighted Chest Dips", sets: "3 Sets", reps: "10-12 Reps", rest: "75s", cue: "Forward torso lean for maximum sternal recruitment" },
-          { name: "Overhead Rope Tricep Ext", sets: "4 Sets", reps: "12-15 Reps", rest: "60s", cue: "Flared handles at lockout, strict elbow stability" },
-          { name: "Straight Bar Cable Pushdowns", sets: "3 Sets", reps: "15-20 Reps", rest: "45s", cue: "Final drop-set on last round till failure" },
-        ]
-      },
-      2: {
-        title: "DAY 2: 🦾 BACK & BICEPS ANABOLIC PULL",
-        focus: "Latissimus Dorsi, Rhomboids, Traps & Biceps",
-        duration: "70 Mins",
-        intensity: "HIGH VOLUME (RPE 8.5)",
-        exercises: [
-          { name: "Deadlifts or Heavy Rack Pulls", sets: "4 Sets", reps: "5-6 Reps", rest: "150s", cue: "Brace core, neutral spine, explosive hip lockout" },
-          { name: "Wide-Grip Lat Pulldowns", sets: "4 Sets", reps: "8-12 Reps", rest: "75s", cue: "Drive elbows down and back towards hips" },
-          { name: "Bent-Over Barbell Rows", sets: "4 Sets", reps: "8-10 Reps", rest: "90s", cue: "Torso parallel to floor, pull to lower sternum" },
-          { name: "Standing Rope Face Pulls", sets: "3 Sets", reps: "15-20 Reps", rest: "60s", cue: "External shoulder rotation for rear delt health" },
-          { name: "Incline Dumbbell Bicep Curls", sets: "4 Sets", reps: "10-12 Reps", rest: "60s", cue: "Full stretch at bottom, strict supination" },
-          { name: "Cross-Body Hammer Curls", sets: "3 Sets", reps: "12-15 Reps", rest: "60s", cue: "Brachialis and forearm thickness overload" },
-        ]
-      },
-      3: {
-        title: "DAY 3: ⚡ LEGS & CORE CYBERNETIC POWER",
-        focus: "Quadriceps, Hamstrings, Gluteus & Abdominals",
-        duration: "75 Mins",
-        intensity: "MAXIMUM HEAVY (RPE 9)",
-        exercises: [
-          { name: "Barbell Back Squats", sets: "5 Sets", reps: "5-8 Reps", rest: "180s", cue: "Hit parallel depth, push knees out over toes" },
-          { name: "Romanian Deadlifts (RDLs)", sets: "4 Sets", reps: "8-10 Reps", rest: "90s", cue: "Hip hinge emphasis, intense hamstring stretch" },
-          { name: "45° Incline Leg Press", sets: "4 Sets", reps: "12-15 Reps", rest: "90s", cue: "Full range of motion, no locking knees at apex" },
-          { name: "Bulgarian Split Squats", sets: "3 Sets", reps: "10-12 Reps/leg", rest: "60s", cue: "Unilateral stabilization and glute hypertrophy" },
-          { name: "Seated Calf Raises", sets: "4 Sets", reps: "15-20 Reps", rest: "45s", cue: "3-second pause in full dorsiflexion stretch" },
-          { name: "Hanging Leg Raises", sets: "4 Sets", reps: "12-15 Reps", rest: "60s", cue: "Curl pelvis upward, eliminate body momentum" },
-        ]
-      },
-      4: {
-        title: "DAY 4: 🛡️ BOULDER SHOULDERS & UPPER ABS",
-        focus: "Anterior/Lateral/Posterior Deltoids & Core",
-        duration: "60 Mins",
-        intensity: "MODERATE HIGH (RPE 8)",
-        exercises: [
-          { name: "Overhead Military Press", sets: "4 Sets", reps: "6-8 Reps", rest: "120s", cue: "Lock glutes and core, head through window at top" },
-          { name: "Lean-Away Cable Lateral Raises", sets: "5 Sets", reps: "12-15 Reps", rest: "60s", cue: "Constant lateral tension, lead with elbows" },
-          { name: "Bent-Over Rear Delt Flyes", sets: "4 Sets", reps: "15 Reps", rest: "60s", cue: "Pinkies up, squeeze posterior deltoids" },
-          { name: "Dumbbell Arnold Press", sets: "3 Sets", reps: "10-12 Reps", rest: "75s", cue: "Smooth rotational sweep through full arc" },
-          { name: "Cable High-to-Low Woodchoppers", sets: "3 Sets", reps: "12 Reps/side", rest: "45s", cue: "Rotational core torque and obliques definition" },
-          { name: "Ab Wheel Rollouts", sets: "3 Sets", reps: "10-15 Reps", rest: "60s", cue: "Posterior pelvic tilt throughout extension" },
-        ]
-      },
-      5: {
-        title: "DAY 5: ⚔️ ARMS & FOREARMS HYPER-VOLUME",
-        focus: "Biceps Long/Short Head, Triceps 3 Heads & Forearms",
-        duration: "55 Mins",
-        intensity: "HYPERTROPHY PUMP (RPE 8)",
-        exercises: [
-          { name: "EZ-Bar Preacher Curls", sets: "4 Sets", reps: "10-12 Reps", rest: "60s", cue: "Isolate bicep peak without front delt cheating" },
-          { name: "Barbell Skullcrushers", sets: "4 Sets", reps: "8-12 Reps", rest: "75s", cue: "Slight angle backward for long head stretch" },
-          { name: "21s Shock Curl Protocol", sets: "3 Sets", reps: "21 Reps (7/7/7)", rest: "90s", cue: "7 lower half, 7 upper half, 7 full range" },
-          { name: "Overhead Cable Tricep Ext", sets: "4 Sets", reps: "12-15 Reps", rest: "45s", cue: "Deep triceps stretch behind the nape" },
-          { name: "Reverse-Grip EZ Bar Curls", sets: "3 Sets", reps: "15 Reps", rest: "45s", cue: "Explode forearm thickness and grip strength" },
-          { name: "Behind-the-Back Wrist Curls", sets: "3 Sets", reps: "20 Reps", rest: "45s", cue: "Flexors burnout till mechanical failure" },
-        ]
-      },
-      6: {
-        title: "DAY 6: 🔥 ATHLETIC CONDITIONING & METABOLIC BURN",
-        focus: "Cardiovascular VO2 Max, Agility & Full Body Power",
-        duration: "50 Mins",
-        intensity: "ANAEROBIC THRESHOLD (RPE 8.5)",
-        exercises: [
-          { name: "Heavy Kettlebell Swings", sets: "5 Sets", reps: "20 Reps", rest: "60s", cue: "Explosive posterior chain snap, power from hips" },
-          { name: "Assault AirBike Sprints", sets: "6 Rounds", reps: "30s All-Out / 60s Rest", rest: "60s", cue: "Max RPM wattage output" },
-          { name: "Trap Bar Farmer's Walks", sets: "4 Sets", reps: "50 Meters", rest: "90s", cue: "Tall posture, anti-shrug scapular packing" },
-          { name: "Plyometric Box Jumps", sets: "4 Sets", reps: "10 Reps", rest: "60s", cue: "Soft landing, step down safely" },
-          { name: "Battle Rope Slams + Waves", sets: "4 Sets", reps: "45 Seconds", rest: "45s", cue: "Alternating fast waves and ground slams" },
-        ]
-      },
-      7: {
-        title: "DAY 7: 🔋 FULL BODY REST & HYPER-RECOVERY",
-        focus: "Myofascial Release, CNS Restoration & Mobility",
-        duration: "30 Mins (Light)",
-        intensity: "ACTIVE RECOVERY (RPE 2-3)",
-        exercises: [
-          { name: "Full-Body Foam Rolling", sets: "1 Session", reps: "15 Mins", rest: "0s", cue: "Slow scans on quads, IT band, lats, and upper back" },
-          { name: "Thoracic Spine & Hip 90/90", sets: "3 Rounds", reps: "10 Reps/side", rest: "30s", cue: "Unlock hip capsules and rotational spine mobility" },
-          { name: "Light Outdoor Walking", sets: "1 Walk", reps: "30-45 Mins", rest: "0s", cue: "Brisk pace, nasal diaphragmatic breathing only" },
-          { name: "Electrolyte Hydration + 8hr Sleep", sets: "Goal", reps: "Deep Rest", rest: "--", cue: "Repair damaged myofibrils and replenish glycogen" },
-        ]
-      }
+    const workouts = {
+      1: ["Incline DB Press (4x10)", "Flat Barbell Bench (3x8)", "Cable Chest Flyes (3x12)", "Rope Tricep Extension (4x12)"],
+      2: ["Wide Lat Pulldowns (4x10)", "T-Bar Chest Supported Row (4x8)", "DB Incline Bicep Curls (4x12)", "Hammer Curls (3x12)"],
+      3: ["Barbell Squats (4x8)", "Romanian Deadlifts (4x10)", "Leg Press (3x12)", "Standing Calf Raises (4x15)"],
+      4: ["Seated DB Overhead Press (4x10)", "Cable Lateral Raises (4x15)", "Rear Delt Flyes (4x12)", "DB Shrugs (3x12)"],
+      5: ["Preacher Curls (4x10)", "Skull Crushers (4x10)", "Cable Bayonet Curls (3x12)", "Tricep Straight Bar Pushdown (3x15)"],
+      6: ["Row / Bike HIIT Sprints (6x30s)", "Kettlebell Swings (4x20)", "Plank to Push-Ups (3x15)", "Hanging Leg Raises (3x15)"]
     };
 
-    function selectWorkoutDay(day) {
-      currentWorkoutDay = day;
-      document.querySelectorAll('.day-tab').forEach((tab, idx) => {
-        const d = idx + 1;
-        if (d === day) {
-          tab.className = "day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-emerald-500 text-zinc-950 shadow-neon-emerald whitespace-nowrap cursor-pointer";
-        } else {
-          tab.className = "day-tab px-3 py-1.5 rounded-xl text-xs font-tech font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 whitespace-nowrap cursor-pointer";
-        }
+    function renderWorkout(day) {
+      document.querySelectorAll('.wday-btn').forEach((b, i) => {
+        b.className = (i + 1 === day) ? "wday-btn px-3 py-1.5 rounded-xl bg-accent text-black font-bold shrink-0" : "wday-btn px-3 py-1.5 rounded-xl bg-cardMuted text-zinc-300 shrink-0";
       });
-
-      renderWorkoutSplit();
+      document.getElementById('workout-list').innerHTML = workouts[day].map(ex => `
+        <div class="bg-card p-3 rounded-2xl border border-white/5 flex justify-between items-center text-xs">
+          <span class="font-bold text-zinc-200">${ex.split(' (')[0]}</span>
+          <span class="text-accent font-mono">${ex.split(' (')[1].replace(')', '')}</span>
+        </div>`).join('');
     }
 
-    function renderWorkoutSplit() {
-      const container = document.getElementById('workout-day-card');
-      const data = WORKOUT_SPLIT_DATA[currentWorkoutDay] || WORKOUT_SPLIT_DATA[1];
-      if (!container) return;
-
-      container.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 mb-3 border-b border-zinc-800">
-          <div>
-            <h5 class="font-cyber font-bold text-sm sm:text-base text-emerald-400">${data.title}</h5>
-            <p class="text-[11px] font-tech text-zinc-400 mt-0.5">Target: ${data.focus}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-[10px] text-zinc-300">
-              ⏱️ ${data.duration}
-            </span>
-            <span class="px-2 py-0.5 rounded-lg bg-emerald-950 border border-emerald-500/30 font-tech font-bold text-[10px] text-emerald-400">
-              ${data.intensity}
-            </span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          ${data.exercises.map((ex, idx) => `
-            <div class="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800/90 hover:border-emerald-500/40 transition-all flex flex-col justify-between">
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <span class="w-5 h-5 rounded-md bg-zinc-950 border border-zinc-700 font-mono text-[10px] text-emerald-400 flex items-center justify-center font-bold">
-                    ${idx + 1}
-                  </span>
-                  <span class="font-bold text-xs sm:text-sm text-white">${ex.name}</span>
-                </div>
-                <span class="px-2 py-0.5 rounded bg-zinc-950 text-emerald-400 font-mono text-[11px] font-bold whitespace-nowrap border border-zinc-800">
-                  ${ex.sets} × ${ex.reps}
-                </span>
-              </div>
-              <div class="mt-2 pt-2 border-t border-zinc-800/60 flex items-center justify-between text-[10px] font-tech text-zinc-400">
-                <span class="truncate mr-2"><strong class="text-zinc-500">CUE:</strong> ${ex.cue}</span>
-                <span class="font-mono text-zinc-500 whitespace-nowrap">Rest: ${ex.rest}</span>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      `;
+    function toggleTimer() {
+      const btn = document.getElementById('timer-btn');
+      if (timerId) { clearInterval(timerId); timerId = null; btn.innerText = "Resume ▶"; return; }
+      btn.innerText = "Pause ⏸";
+      timerId = setInterval(() => {
+        timer--;
+        document.getElementById('timer-val').innerText = timer + 's';
+        if (timer <= 0) { clearInterval(timerId); timerId = null; timer = 60; playBeep(1200, 0.6); btn.innerText = "Start ▶"; showToast("Rest Over! Next Set!"); }
+      }, 1000);
     }
+    function setTimerPreset(s) { if (timerId) clearInterval(timerId); timerId = null; timer = s; document.getElementById('timer-val').innerText = s + 's'; document.getElementById('timer-btn').innerText = "Start ▶"; }
 
-    // ==========================================
-    // 12. REAL-TIME CLOCK & AUTO-RESTORE (IF SAVED)
-    // ==========================================
-    function updateClock() {
-      const clockEl = document.getElementById('live-clock');
-      if (clockEl) {
-        const now = new Date();
-        clockEl.innerText = now.toLocaleTimeString('en-GB');
-      }
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    // Auto-restore session only if valid user previously searched and confirmed
-    window.addEventListener('DOMContentLoaded', async () => {
-      const savedPhone = localStorage.getItem('beast_gym_last_phone');
-      if (savedPhone) {
-        const member = await searchMemberByPhone(savedPhone);
-        if (member) {
-          currentMember = member;
-          renderMemberPortal();
-          showToast("Session Restored", `Welcome back, ${member.full_name || 'Member'}!`, "info");
-        } else {
-          // If not in database anymore, clean up
-          localStorage.removeItem('beast_gym_last_phone');
-        }
-      }
+    // AUTO-INIT
+    window.addEventListener('DOMContentLoaded', () => {
+      const cached = localStorage.getItem('rg_member');
+      if (cached) { member = JSON.parse(cached); loginSuccess(); }
     });
   </script>
 </body>
